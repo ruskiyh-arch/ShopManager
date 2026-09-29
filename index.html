@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopMaster — Учет товаров и продаж</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Visual Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <div class="brand-info">
+                    <span class="brand-name" id="displayShopName">ShopMaster</span>
+                    <span class="brand-tag" data-i18n="tagline">Учет и Продажи</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span data-i18n="navDashboard">Дашборд</span>
+                </button>
+                <button class="nav-btn" data-tab="pos">
+                    <i class="fa-solid fa-cash-register"></i>
+                    <span data-i18n="navPos">Касса (POS)</span>
+                    <span class="badge" id="cartCountBadge" style="display:none">0</span>
+                </button>
+                <button class="nav-btn" data-tab="inventory">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span data-i18n="navInventory">Склад и Товары</span>
+                </button>
+                <button class="nav-btn" data-tab="sales">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span data-i18n="navSales">История продаж</span>
+                </button>
+                <button class="nav-btn" data-tab="analytics">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span data-i18n="navAnalytics">Финансы и Прибыль</span>
+                </button>
+                <button class="nav-btn" data-tab="settings">
+                    <i class="fa-solid fa-gear"></i>
+                    <span data-i18n="navSettings">Настройки</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="theme-toggle-btn" id="themeToggleBtn">
+                    <i class="fa-solid fa-moon"></i>
+                    <span id="themeToggleText">Тёмная тема</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="page-title-box">
+                    <h1 id="pageTitle" data-i18n="titleDashboard">Главный Дашборд</h1>
+                    <p id="pageSubTitle" class="text-muted" data-i18n="subTitleDashboard">Обзор статистики, быстрые показатели и аналитика</p>
+                </div>
+
+                <div class="header-actions">
+                    <!-- Language Selector Dropdown -->
+                    <div class="lang-selector-wrap">
+                        <i class="fa-solid fa-globe"></i>
+                        <select id="langSelect" class="lang-select-btn">
+                            <option value="ru">🇷🇺 Русский</option>
+                            <option value="uz">🇺🇿 O'zbekcha</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary" id="quickAddProductBtn">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="btnNewProduct">Новый товар</span>
+                    </button>
+                    <button class="btn btn-accent" id="quickNewSaleBtn">
+                        <i class="fa-solid fa-cart-plus"></i> <span data-i18n="btnNewSale">Новая продажа</span>
+                    </button>
+                    <div class="current-date" id="currentDateDisplay">
+                        <i class="fa-regular fa-calendar"></i> <span id="dateText">29 Сен 2026</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- TAB 1: DASHBOARD -->
+            <section class="tab-content active" id="tab-dashboard">
+                <!-- Stat Cards Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card revenue-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label" data-i18n="statRevenueLabel">Общая выручка</span>
+                            <h2 class="stat-value" id="statTotalRevenue">0 so'm</h2>
+                            <span class="stat-sub text-success"><i class="fa-solid fa-arrow-trend-up"></i> <span data-i18n="allTime">за всё время</span></span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card profit-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-piggy-bank"></i>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label" data-i18n="statProfitLabel">Чистая прибыль</span>
+                            <h2 class="stat-value text-accent" id="statTotalProfit">0 so'm</h2>
+                            <span class="stat-sub text-muted" data-i18n="statProfitSub">Выручка минус закупка</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card inventory-val-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-box-archive"></i>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label" data-i18n="statItemsLabel">Товаров на складе</span>
+                            <h2 class="stat-value" id="statTotalItems">0 шт</h2>
+                            <span class="stat-sub" id="statInventoryValue">Стоимость закупки: 0 so'm</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card sales-count-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label" data-i18n="statSalesCountLabel">Проведено чеков</span>
+                            <h2 class="stat-value" id="statSalesCount">0</h2>
+                            <span class="stat-sub text-muted" data-i18n="statSalesSub">Проданных чеков</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Stock Alert Banner (Dynamic) -->
+                <div class="alert-banner" id="lowStockBanner" style="display: none;">
+                    <div class="alert-icon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="alert-body">
+                        <strong data-i18n="lowStockAlertTitle">Внимание! Некоторые товары заканчиваются:</strong>
+                        <span id="lowStockListText">Товар 1, Товар 2</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-warning" id="viewLowStockBtn" data-i18n="btnView">Посмотреть</button>
+                </div>
+
+                <!-- Dashboard Charts & Tables Grid -->
+                <div class="dashboard-grid mb-4">
+                    <!-- Interactive Sales Chart -->
+                    <div class="card grid-col-8">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-line"></i> <span data-i18n="chartTitle">Динамика продаж и прибыли</span></h3>
+                        </div>
+                        <div class="card-body">
+                            <div style="position: relative; height: 260px;">
+                                <canvas id="salesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Selling Products -->
+                    <div class="card grid-col-4">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-fire"></i> <span data-i18n="topProductsTitle">Лидеры продаж</span></h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="top-products-list" id="topProductsList">
+                                <div class="empty-state" data-i18n="noSalesData">Нет данных о продажах</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Sales Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="recentSalesTitle">Последние продажи</span></h3>
+                        <button class="btn btn-sm btn-ghost" data-tab-link="sales" data-i18n="allSalesBtn">Все продажи →</button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="thCheckNo">№ Чек</th>
+                                        <th data-i18n="thTime">Время</th>
+                                        <th data-i18n="thProducts">Товары</th>
+                                        <th data-i18n="thSum">Сумма</th>
+                                        <th data-i18n="thProfit">Прибыль</th>
+                                        <th data-i18n="thPayment">Оплата</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentSalesTbody">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted" data-i18n="noSalesYet">Нет проведенных продаж</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: POS / CASH REGISTER -->
+            <section class="tab-content" id="tab-pos">
+                <div class="pos-container">
+                    <!-- Product Catalog Picker -->
+                    <div class="pos-catalog">
+                        <div class="pos-filter-bar">
+                            <div class="search-input-wrap">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="posSearchInput" placeholder="Поиск товара по названию или штрихкоду..." data-i18n-ph="phSearchPos">
+                            </div>
+                            <div class="category-chips-scroll" id="posCategoryChips">
+                                <button class="chip active" data-cat="all" data-i18n="allCategories">Все категории</button>
+                            </div>
+                        </div>
+
+                        <div class="products-grid" id="posProductsGrid">
+                            <!-- Product Cards populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- POS Cart / Checkout Panel -->
+                    <div class="pos-cart-panel">
+                        <div class="cart-header">
+                            <h3><i class="fa-solid fa-cart-shopping"></i> <span data-i18n="cartTitle">Корзина покупателя</span></h3>
+                            <button class="btn btn-sm btn-ghost text-danger" id="clearCartBtn">
+                                <i class="fa-solid fa-trash"></i> <span data-i18n="btnClear">Очистить</span>
+                            </button>
+                        </div>
+
+                        <div class="cart-items-list" id="cartItemsList">
+                            <div class="empty-cart-state">
+                                <i class="fa-solid fa-basket-shopping"></i>
+                                <p data-i18n="cartEmpty">Корзина пуста</p>
+                                <small class="text-muted" data-i18n="cartEmptySub">Выберите товары из списка слева</small>
+                            </div>
+                        </div>
+
+                        <div class="cart-summary">
+                            <div class="summary-row">
+                                <span data-i18n="cartItemsCountLabel">Позиций в чеке:</span>
+                                <strong id="cartItemCount">0 шт</strong>
+                            </div>
+                            <div class="summary-row">
+                                <span data-i18n="discountLabel">Скидка:</span>
+                                <div class="discount-input-wrap">
+                                    <input type="number" id="cartDiscountInput" value="0" min="0" max="100">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="summary-row total-row">
+                                <span data-i18n="totalToPayLabel">ИТОГО К ОПЛАТЕ:</span>
+                                <strong class="total-price" id="cartTotalDisplay">0 so'm</strong>
+                            </div>
+
+                            <div class="payment-method-selector">
+                                <label class="pay-option active">
+                                    <input type="radio" name="paymentType" value="Cash" checked>
+                                    <i class="fa-solid fa-money-bill-wave"></i> <span data-i18n="payCash">Наличные</span>
+                                </label>
+                                <label class="pay-option">
+                                    <input type="radio" name="paymentType" value="Card">
+                                    <i class="fa-solid fa-credit-card"></i> <span data-i18n="payCard">Карта</span>
+                                </label>
+                                <label class="pay-option">
+                                    <input type="radio" name="paymentType" value="Transfer">
+                                    <i class="fa-solid fa-mobile-screen"></i> <span data-i18n="payTransfer">Перевод</span>
+                                </label>
+                            </div>
+
+                            <button class="btn btn-accent btn-block btn-lg" id="checkoutBtn" disabled>
+                                <i class="fa-solid fa-check"></i> <span data-i18n="btnCompleteSale">Оформить продажу</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: INVENTORY & PRODUCTS -->
+            <section class="tab-content" id="tab-inventory">
+                <div class="card">
+                    <div class="card-header flex-wrap gap-3">
+                        <div class="search-input-wrap flex-grow-1">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="inventorySearchInput" placeholder="Искать товар по имени, артикулу, штрихкоду..." data-i18n-ph="phSearchInv">
+                        </div>
+                        <div class="select-wrap">
+                            <select id="inventoryCategoryFilter">
+                                <option value="all" data-i18n="allCategories">Все категории</option>
+                            </select>
+                        </div>
+                        <div class="select-wrap">
+                            <select id="inventoryStockFilter">
+                                <option value="all" data-i18n="stockAll">Все остатки</option>
+                                <option value="in_stock" data-i18n="stockInStock">В наличии</option>
+                                <option value="low" data-i18n="stockLow">Заканчиваются (≤ 5)</option>
+                                <option value="out" data-i18n="stockOut">Нет в наличии (0)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="addProductModalBtn">
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="btnAddProduct">Добавить товар</span>
+                        </button>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="thProduct">Товар</th>
+                                        <th data-i18n="thCategory">Категория</th>
+                                        <th data-i18n="thCostPrice">Цена закупки</th>
+                                        <th data-i18n="thSalePrice">Цена продажи</th>
+                                        <th data-i18n="thProfitPercent">Прибыль %</th>
+                                        <th data-i18n="thStock">Остаток</th>
+                                        <th data-i18n="thStatus">Статус</th>
+                                        <th class="text-end" data-i18n="thActions">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryTbody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: SALES HISTORY -->
+            <section class="tab-content" id="tab-sales">
+                <div class="card">
+                    <div class="card-header flex-wrap gap-3">
+                        <div class="search-input-wrap flex-grow-1">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="salesSearchInput" placeholder="Поиск по номеру чека или товарам..." data-i18n-ph="phSearchSales">
+                        </div>
+                        <button class="btn btn-outline-danger" id="clearSalesHistoryBtn">
+                            <i class="fa-solid fa-trash-can"></i> <span data-i18n="btnClearHistory">Очистить историю</span>
+                        </button>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="thCheckNo">№ Чек</th>
+                                        <th data-i18n="thDate">Дата и Время</th>
+                                        <th data-i18n="thProducts">Товары и Кол-во</th>
+                                        <th data-i18n="thCheckSum">Сумма чека</th>
+                                        <th data-i18n="thCostSum">Закупка</th>
+                                        <th data-i18n="thProfit">Прибыль</th>
+                                        <th data-i18n="thPayment">Оплата</th>
+                                        <th class="text-end" data-i18n="thActionReceipt">Чек / Возврат</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salesHistoryTbody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: FINANCIAL ANALYTICS -->
+            <section class="tab-content" id="tab-analytics">
+                <div class="stats-grid mb-4">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-chart-bar"></i></div>
+                        <div class="stat-details">
+                            <span class="stat-label" data-i18n="statRevenueLabel">Общая выручка</span>
+                            <h2 class="stat-value" id="analyticsRevenue">0 so'm</h2>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon text-warning"><i class="fa-solid fa-truck-ramp-box"></i></div>
+                        <div class="stat-details">
+                            <span class="stat-label" data-i18n="statCostLabel">Расходы на закупку</span>
+                            <h2 class="stat-value" id="analyticsCost">0 so'm</h2>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon text-success"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                        <div class="stat-details">
+                            <span class="stat-label" data-i18n="statNetProfitLabel">Чистая прибыль</span>
+                            <h2 class="stat-value text-success" id="analyticsNetProfit">0 so'm</h2>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon text-info"><i class="fa-solid fa-percent"></i></div>
+                        <div class="stat-details">
+                            <span class="stat-label" data-i18n="statAvgProfitRate">Средняя прибыль %</span>
+                            <h2 class="stat-value" id="analyticsMarginPercent">0%</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-chart-column"></i> <span data-i18n="analyticsTableTitle">Структура прибыли по товарам</span></h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="thProductName">Наименование товара</th>
+                                        <th data-i18n="thSoldQty">Продано шт.</th>
+                                        <th data-i18n="thRevenue">Выручка</th>
+                                        <th data-i18n="thCost">Закупка</th>
+                                        <th data-i18n="thProfit">Прибыль</th>
+                                        <th data-i18n="thShare">Доля в прибыли</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="analyticsProductsTbody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: SETTINGS & BACKUP -->
+            <section class="tab-content" id="tab-settings">
+                <div class="settings-grid">
+                    <!-- Shop Details Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-sliders"></i> <span data-i18n="settingsBasicTitle">Основные настройки</span></h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="settingsForm">
+                                <div class="form-group mb-3">
+                                    <label class="form-label" data-i18n="labelShopName">Название вашего магазина</label>
+                                    <input type="text" class="form-control" id="settingShopName" value="Мой Магазин">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="form-label" data-i18n="labelCurrency">Денежная единица</label>
+                                    <input type="text" class="form-control" id="settingCurrency" value="so'm">
+                                </div>
+                                <div class="form-group mb-4">
+                                    <label class="form-label" data-i18n="labelLowStockThreshold">Порог предупреждения о малом остатке (шт)</label>
+                                    <input type="number" class="form-control" id="settingLowStockThreshold" value="5" min="1">
+                                </div>
+                                <button type="submit" class="btn btn-primary" data-i18n="btnSaveSettings">Сохранить настройки</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Backup & Restore Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-database"></i> <span data-i18n="settingsBackupTitle">Резервное копирование и Сброс</span></h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4" data-i18n="settingsBackupSub">Вы можете экспортировать все товары, историю продаж и настройки в файл резервной копии или восстановить их при необходимости.</p>
+                            
+                            <div class="d-flex flex-column gap-3">
+                                <button class="btn btn-outline-primary" id="exportBackupBtn">
+                                    <i class="fa-solid fa-download"></i> <span data-i18n="btnExportBackup">Экспортировать бэкап (JSON)</span>
+                                </button>
+                                
+                                <label class="btn btn-outline-info custom-file-upload">
+                                    <i class="fa-solid fa-upload"></i> <span data-i18n="btnImportBackup">Восстановить из бэкапа</span>
+                                    <input type="file" id="importBackupInput" accept=".json" style="display: none;">
+                                </label>
+
+                                <hr class="my-2">
+
+                                <button class="btn btn-outline-warning" id="loadDemoDataBtn">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="btnLoadDemo">Загрузить демо-товары</span>
+                                </button>
+
+                                <button class="btn btn-outline-danger" id="resetAllDataBtn">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="btnResetAll">Полный сброс базы данных</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: ADD / EDIT PRODUCT (Clean form without emoji icon) -->
+    <div class="modal-overlay" id="productModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="productModalTitle"><i class="fa-solid fa-box"></i> <span data-i18n="modalAddTitle">Добавить товар</span></h3>
+                <button class="modal-close-btn" id="closeProductModalBtn">&times;</button>
+            </div>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label class="form-label" data-i18n="labelProdName">Наименование товара *</label>
+                        <input type="text" class="form-control" id="prodName" required placeholder="Например: Джинсы Классик Blue" data-i18n-ph="phProdName">
+                    </div>
+
+                    <div class="form-row mb-3">
+                        <div class="form-group col">
+                            <label class="form-label" data-i18n="labelProdCategory">Категория</label>
+                            <input type="text" class="form-control" id="prodCategory" placeholder="Одежда" list="categoryOptions" data-i18n-ph="phProdCategory">
+                            <datalist id="categoryOptions">
+                                <option value="Одежда">
+                                <option value="Обувь">
+                                <option value="Электроника">
+                                <option value="Аксессуары">
+                                <option value="Продукты">
+                            </datalist>
+                        </div>
+                        <div class="form-group col">
+                            <label class="form-label" data-i18n="labelProdBarcode">Штрихкод / Артикул</label>
+                            <div class="input-with-action">
+                                <input type="text" class="form-control" id="prodBarcode" placeholder="460000000000">
+                                <button type="button" class="btn btn-ghost" id="genBarcodeBtn" title="Сгенерировать"><i class="fa-solid fa-barcode"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row mb-3">
+                        <div class="form-group col">
+                            <label class="form-label" data-i18n="labelCostPrice">Цена закупки *</label>
+                            <input type="number" step="100" min="0" class="form-control" id="prodCostPrice" required placeholder="0">
+                        </div>
+                        <div class="form-group col">
+                            <label class="form-label" data-i18n="labelSalePrice">Цена продажи *</label>
+                            <input type="number" step="100" min="0" class="form-control" id="prodSalePrice" required placeholder="0">
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" data-i18n="labelProdStock">Количество на складе (шт) *</label>
+                        <input type="number" min="0" class="form-control" id="prodStock" required value="10">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="cancelProductModalBtn" data-i18n="btnCancel">Отмена</button>
+                    <button type="submit" class="btn btn-primary" id="saveProductBtn" data-i18n="btnSaveProduct">Сохранить товар</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: RECEIPT PRINT / VIEW (HUMO/UZCARD Style Realistic Thermal Receipt) -->
+    <div class="modal-overlay" id="receiptModal">
+        <div class="modal-card modal-receipt-wrap">
+            <div class="modal-header no-print">
+                <h3><i class="fa-solid fa-print"></i> <span data-i18n="receiptModalTitle">Кассовый Чек</span></h3>
+                <button class="modal-close-btn" id="closeReceiptModalBtn">&times;</button>
+            </div>
+            <div class="modal-body p-2">
+                <div class="receipt-paper" id="receiptPaper">
+                    <!-- Populated dynamically by JS -->
+                </div>
+            </div>
+            <div class="modal-footer no-print">
+                <button class="btn btn-primary btn-block" id="printReceiptBtn">
+                    <i class="fa-solid fa-print"></i> <span data-i18n="btnPrintReceipt">Распечатать / Сохранить</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main JS Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
