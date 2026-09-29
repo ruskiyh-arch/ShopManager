@@ -65,9 +65,58 @@
             </div>
         </aside>
 
+        <!-- ===== MOBILE TOP BAR ===== -->
+        <div class="mobile-top-bar">
+            <div class="brand-icon" style="width:36px;height:36px;font-size:15px;">
+                <i class="fa-solid fa-store"></i>
+            </div>
+            <span class="shop-name-mobile" id="mobileShopName">ShopMaster</span>
+            <div class="lang-selector-wrap" style="padding:4px 10px;">
+                <i class="fa-solid fa-globe" style="font-size:12px;"></i>
+                <select id="langSelectMobile" class="lang-select-btn" style="font-size:12px;">
+                    <option value="ru">RU</option>
+                    <option value="uz">UZ</option>
+                </select>
+            </div>
+            <button class="theme-toggle-btn" id="themeToggleMobile" style="width:auto;padding:6px 10px;font-size:12px;border-radius:10px;">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+
+        <!-- ===== MOBILE BOTTOM NAVIGATION ===== -->
+        <nav class="mobile-bottom-nav">
+            <div class="mobile-nav-items">
+                <button class="mobile-nav-btn active" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span data-i18n="navDashboard">Дашборд</span>
+                </button>
+                <button class="mobile-nav-btn" data-tab="pos">
+                    <i class="fa-solid fa-cash-register"></i>
+                    <span data-i18n="navPos">Касса</span>
+                    <div class="badge-dot" id="mobileCartDot"></div>
+                </button>
+                <button class="mobile-nav-btn" data-tab="inventory">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span data-i18n="navInventory">Склад</span>
+                </button>
+                <button class="mobile-nav-btn" data-tab="sales">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span data-i18n="navSales">Продажи</span>
+                </button>
+                <button class="mobile-nav-btn" data-tab="analytics">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span data-i18n="navAnalytics">Финансы</span>
+                </button>
+                <button class="mobile-nav-btn" data-tab="settings">
+                    <i class="fa-solid fa-gear"></i>
+                    <span data-i18n="navSettings">Настройки</span>
+                </button>
+            </div>
+        </nav>
+
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Header Bar -->
+            <!-- Header Bar (Desktop only) -->
             <header class="top-header">
                 <div class="page-title-box">
                     <h1 id="pageTitle" data-i18n="titleDashboard">Главный Дашборд</h1>
@@ -95,6 +144,16 @@
                     </div>
                 </div>
             </header>
+
+            <!-- MOBILE ACTION BAR (shown on mobile only) -->
+            <div class="mobile-action-bar" id="mobileActionBar">
+                <button class="btn btn-primary flex-grow-1" id="mobileAddProductBtn">
+                    <i class="fa-solid fa-plus"></i> <span data-i18n="btnNewProduct">Новый товар</span>
+                </button>
+                <button class="btn btn-accent flex-grow-1" id="mobileNewSaleBtn">
+                    <i class="fa-solid fa-cart-plus"></i> <span data-i18n="btnNewSale">Новая продажа</span>
+                </button>
+            </div>
 
             <!-- TAB 1: DASHBOARD -->
             <section class="tab-content active" id="tab-dashboard">

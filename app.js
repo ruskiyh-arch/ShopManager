@@ -267,7 +267,58 @@
         applyLanguage(state.currentLang);
         updateDateDisplay();
         bindEvents();
+        bindMobileEvents();
         renderAll();
+    }
+
+    function bindMobileEvents() {
+        // Mobile bottom nav buttons
+        document.querySelectorAll('.mobile-nav-btn[data-tab]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-tab');
+                switchTab(tab);
+                document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // sync desktop sidebar
+                document.querySelectorAll('.nav-btn[data-tab]').forEach(nb => {
+                    nb.classList.toggle('active', nb.getAttribute('data-tab') === tab);
+                });
+            });
+        });
+
+        // Mobile language selector (synced with desktop)
+        const langSelectMobile = document.getElementById('langSelectMobile');
+        if (langSelectMobile) {
+            langSelectMobile.addEventListener('change', (e) => {
+                applyLanguage(e.target.value);
+                renderAll();
+            });
+        }
+
+        // Mobile theme toggle
+        const themeToggleMobile = document.getElementById('themeToggleMobile');
+        if (themeToggleMobile) {
+            themeToggleMobile.addEventListener('click', () => {
+                const newTheme = state.settings.theme === 'dark' ? 'light' : 'dark';
+                state.settings.theme = newTheme;
+                saveSettings();
+                applyTheme(newTheme);
+                // update icon
+                const icon = themeToggleMobile.querySelector('i');
+                if (icon) icon.className = newTheme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+            });
+        }
+
+        // Mobile action bar buttons
+        const mobileAddProductBtn = document.getElementById('mobileAddProductBtn');
+        if (mobileAddProductBtn) {
+            mobileAddProductBtn.addEventListener('click', openAddProductModal);
+        }
+
+        const mobileNewSaleBtn = document.getElementById('mobileNewSaleBtn');
+        if (mobileNewSaleBtn) {
+            mobileNewSaleBtn.addEventListener('click', () => switchTab('pos'));
+        }
     }
 
     function loadStateFromStorage() {
@@ -330,8 +381,11 @@
         state.currentLang = lang;
         saveLang();
 
+        // Sync both desktop and mobile language selectors
         const langSelect = document.getElementById('langSelect');
         if (langSelect) langSelect.value = lang;
+        const langSelectMobile = document.getElementById('langSelectMobile');
+        if (langSelectMobile) langSelectMobile.value = lang;
 
         const dict = i18n[lang] || i18n.ru;
 
@@ -387,6 +441,9 @@
     function updateBrandAndSettingsUI() {
         const brandElem = document.getElementById('displayShopName');
         if (brandElem) brandElem.textContent = state.settings.shopName;
+        // Update mobile top bar shop name too
+        const mobileShopName = document.getElementById('mobileShopName');
+        if (mobileShopName) mobileShopName.textContent = state.settings.shopName;
 
         const setShopName = document.getElementById('settingShopName');
         if (setShopName) setShopName.value = state.settings.shopName;
@@ -1256,13 +1313,28 @@
     }
 
     function exportBackupJSON() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-        const dlAnchor = document.createElement('a');
-        dlAnchor.setAttribute("href", dataStr);
-        dlAnchor.setAttribute("download", `ShopMaster_Backup_${new Date().toISOString().slice(0, 10)}.json`);
-        document.body.appendChild(dlAnchor);
-        dlAnchor.click();
-        dlAnchor.remove();
+        try {
+            // Exclude chartInstance — it's a Chart.js object that can't be serialized
+            const exportData = {
+                products: state.products,
+                sales: state.sales,
+                settings: state.settings,
+                currentLang: state.currentLang
+            };
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const dlAnchor = document.createElement('a');
+            dlAnchor.href = url;
+            dlAnchor.download = 'ShopMaster_Backup_' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            document.body.removeChild(dlAnchor);
+            URL.revokeObjectURL(url);
+            alert(state.currentLang === 'uz' ? 'Zaxira fayli yuklandi!' : 'Файл бэкапа скачан!');
+        } catch (err) {
+            alert('Ошибка экспорта: ' + err.message);
+        }
     }
 
     function importBackupJSON(e) {
