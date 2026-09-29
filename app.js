@@ -1,18 +1,30 @@
-/* ==========================================================================
-   ShopMaster — Core Business Logic & Multilingual Engine (RU / UZ)
-   ========================================================================== */
+/**
+ * ShopMaster POS — Modern Retail Management Application
+ * Features:
+ * - POS Checkout & Fast Cart
+ * - Live Camera Barcode & QR Scanner (html5-qrcode)
+ * - Printable Barcode Price Tags (JsBarcode)
+ * - Excel (.xlsx) Export for Inventory & Sales (SheetJS)
+ * - Celebratory Confetti Animation (canvas-confetti)
+ * - Synthesized Audio POS Sounds (Web Audio API)
+ * - Debt / Credit Ledger (Qarz Daftari)
+ * - Visual Financial Charts (Chart.js)
+ * - Mobile Touch-Optimized Navigation
+ */
 
 (function () {
     'use strict';
 
+    // STORAGE KEYS
     const STORAGE_KEYS = {
-        PRODUCTS: 'shopmaster_products_v3',
-        SALES: 'shopmaster_sales_v3',
-        SETTINGS: 'shopmaster_settings_v3',
-        LANG: 'shopmaster_lang_v3'
+        PRODUCTS: 'shopmaster_products_v4',
+        SALES: 'shopmaster_sales_v4',
+        SETTINGS: 'shopmaster_settings_v4',
+        LANG: 'shopmaster_lang_v4',
+        DEBTS: 'shopmaster_debts_v4'
     };
 
-    // TRANSLATIONS DICTIONARY (RU & UZ)
+    // TRANSLATIONS
     const i18n = {
         ru: {
             unit: "шт",
@@ -21,19 +33,19 @@
             navPos: "Касса (POS)",
             navInventory: "Склад и Товары",
             navSales: "История продаж",
-            navAnalytics: "Финансы и Прибыль",
+            navAnalytics: "Финансы и Отчеты",
+            navDebts: "Долги (Qarzlar)",
             navSettings: "Настройки",
             titleDashboard: "Главный Дашборд",
             subTitleDashboard: "Обзор статистики, быстрые показатели и аналитика",
             btnNewProduct: "Новый товар",
             btnNewSale: "Новая продажа",
-            statRevenueLabel: "Общая выручка (Савдо)",
+            statRevenueLabel: "Общая выручка",
             allTime: "за всё время",
             statProfitLabel: "Чистая прибыль",
             statProfitSub: "Выручка минус закупка",
             statItemsLabel: "Товаров на складе",
             statSalesCountLabel: "Проведено чеков",
-            statSalesSub: "Проданных чеков",
             lowStockAlertTitle: "Внимание! Некоторые товары заканчиваются:",
             btnView: "Посмотреть",
             chartTitle: "Динамика продаж и прибыли",
@@ -55,11 +67,12 @@
             cartEmpty: "Корзина пуста",
             cartEmptySub: "Выберите товары из списка слева",
             cartItemsCountLabel: "Позиций в чеке:",
-            discountLabel: "Скидка:",
+            discountLabel: "Скидка покупателю:",
             totalToPayLabel: "ИТОГО К ОПЛАТЕ:",
             payCash: "Наличные",
-            payCard: "Карта (Humo/Uzcard)",
-            payTransfer: "Перевод (Click/Payme)",
+            payCard: "Карта",
+            payTransfer: "Click / Payme",
+            payDebt: "В долг (Насия)",
             btnCompleteSale: "Оформить продажу",
             phSearchInv: "Искать товар по имени, артикулу, штрихкоду...",
             stockAll: "Все остатки",
@@ -69,900 +82,1095 @@
             btnAddProduct: "Добавить товар",
             thProduct: "Товар",
             thCategory: "Категория",
-            thCostPrice: "Цена закупки",
+            thCostPrice: "Закупка",
             thSalePrice: "Цена продажи",
-            thProfitPercent: "Прибыль %",
+            thProfitPercent: "Маржа %",
             thStock: "Остаток",
             thStatus: "Статус",
             thActions: "Действия",
-            phSearchSales: "Поиск по номеру чека или товарам...",
+            phSearchSales: "Поиск по номеру чека или товару...",
             btnClearHistory: "Очистить историю",
-            thDate: "Дата и Время",
-            thCheckSum: "Сумма чека",
-            thCostSum: "Закупка",
-            thActionReceipt: "Чек / Возврат",
-            statCostLabel: "Расходы на закупку",
-            statNetProfitLabel: "Чистая прибыль",
-            statAvgProfitRate: "Средняя прибыль %",
-            analyticsTableTitle: "Структура прибыли по товарам",
-            thProductName: "Наименование товара",
-            thSoldQty: "Продано шт.",
-            thRevenue: "Выручка",
-            thCost: "Закупка",
-            thShare: "Доля в прибыли",
-            settingsBasicTitle: "Основные настройки",
+            thDate: "Дата и время",
+            modalAddTitle: "Добавить товар",
+            modalEditTitle: "Редактировать товар",
+            labelProdName: "Наименование товара *",
+            labelProdCategory: "Категория",
+            labelProdBarcode: "Штрихкод / QR",
+            labelProdCost: "Цена закупки (Себестоимость) *",
+            labelProdPrice: "Цена продажи *",
+            labelProdStock: "Остаток на складе (шт) *",
+            labelProdUnit: "Единица измерения",
+            btnCancel: "Отмена",
+            btnSave: "Сохранить",
+            receiptTitle: "Кассовый чек",
+            btnPrint: "Печать чека",
+            settingsBasicTitle: "Основные настройки магазина",
             labelShopName: "Название вашего магазина",
             labelCurrency: "Денежная единица",
             labelLowStockThreshold: "Порог предупреждения о малом остатке (шт)",
             btnSaveSettings: "Сохранить настройки",
-            settingsBackupTitle: "Резервное копирование и Сброс",
+            settingsBackupTitle: "Резервное копирование и База данных",
             settingsBackupSub: "Вы можете экспортировать все товары, историю продаж и настройки в файл резервной копии или восстановить их при необходимости.",
-            btnExportBackup: "Экспортировать бэкап (JSON)",
+            btnExportBackup: "Экспортировать JSON",
             btnImportBackup: "Восстановить из бэкапа",
-            btnLoadDemo: "Загрузить демо-товары",
+            btnLoadDemo: "Демо-данные",
             btnResetAll: "Полный сброс базы данных",
-            modalAddTitle: "Добавить товар",
-            labelProdName: "Наименование товара *",
-            phProdName: "Например: Джинсы Классик Blue",
-            labelProdCategory: "Категория",
-            phProdCategory: "Одежда",
-            labelProdBarcode: "Штрихкод / Артикул",
-            labelCostPrice: "Цена закупки *",
-            labelSalePrice: "Цена продажи *",
-            labelProdStock: "Количество на складе (шт) *",
-            btnCancel: "Отмена",
-            btnSaveProduct: "Сохранить товар",
-            receiptModalTitle: "Кассовый Чек",
-            btnPrintReceipt: "Распечатать / Сохранить",
-            inStock: "В наличии",
-            outOfStock: "Распродано",
-            lowStock: "Мало"
+            statusInStock: "В наличии",
+            statusLowStock: "Мало",
+            statusOutOfStock: "Нет в наличии",
+            confirmReset: "ВНИМАНИЕ! Все товары, история продаж и долги будут БЕЗВОЗВРАТНО УДАЛЕНЫ! Вы уверены?",
+            resetDone: "База данных успешно сброшена.",
+            confirmRefund: "Оформить возврат чека №",
+            saleRefunded: "Чек возвращен, товары возвращены на склад.",
+            btnCameraScan: "Сканер (Камера)",
+            btnScan: "Сканер",
+            btnExportExcel: "Excel (.xlsx)",
+            btnExportSalesExcel: "Экспорт продаж (Excel)",
+            systemOnline: "Касса в сети",
+            periodLast7Days: "Последние 7 дней",
+            kpiMarginLabel: "Рентабельность (ROI)",
+            kpiAvgCheck: "Средний чек",
+            kpiInventoryCost: "Себестоимость склада",
+            kpiPotentialRevenue: "Ожидаемая выручка"
         },
         uz: {
             unit: "dona",
-            tagline: "Hisob va Sotuvlar",
-            navDashboard: "Bosh sahifa",
+            tagline: "Hisob va Savdo",
+            navDashboard: "Boshqaruv",
             navPos: "Kassa (POS)",
-            navInventory: "Ombor va Tovar",
-            navSales: "Sotuvlar tarixi",
-            navAnalytics: "Moliya va Foyda",
+            navInventory: "Ombor va Mahsulotlar",
+            navSales: "Savdo tarixi",
+            navAnalytics: "Moliya va Hisobot",
+            navDebts: "Qarzlar daftari",
             navSettings: "Sozlamalar",
-            titleDashboard: "Asosiy Bosh Sahifa",
-            subTitleDashboard: "Statistika ko'rsatkichlari va tahlil",
+            titleDashboard: "Asosiy Ko'rsatkichlar",
+            subTitleDashboard: "Statistika, tezkor ko'rsatkichlar va tahlil",
             btnNewProduct: "Yangi mahsulot",
-            btnNewSale: "Yangi sotuv",
-            statRevenueLabel: "Umumiy tushum (Savdo)",
-            allTime: "barcha vaqt uchun",
+            btnNewSale: "Yangi savdo",
+            statRevenueLabel: "Umumiy tushum",
+            allTime: "barcha davr",
             statProfitLabel: "Sof foyda",
-            statProfitSub: "Tushum minus kirim narxi",
+            statProfitSub: "Tushumdan tan narxi ayirilgan",
             statItemsLabel: "Ombordagi mahsulotlar",
             statSalesCountLabel: "Cheklar soni",
-            statSalesSub: "Sotilgan cheklar",
-            lowStockAlertTitle: "Diqqat! Ba'zi mahsulotlar tugamoqda:",
+            lowStockAlertTitle: "Diqqat! Ba'zi mahsulotlar tugab bormoqda:",
             btnView: "Ko'rish",
-            chartTitle: "Sotuvlar va foyda dinamikasi",
+            chartTitle: "Savdo va sof foyda dinamikasi",
             topProductsTitle: "Eng ko'p sotilganlar",
-            noSalesData: "Sotuvlar haqida ma'lumot yo'q",
-            recentSalesTitle: "Oxirgi sotuvlar",
-            allSalesBtn: "Barcha sotuvlar →",
+            noSalesData: "Savdo ma'lumotlari yo'q",
+            recentSalesTitle: "Oxirgi savdolar",
+            allSalesBtn: "Barcha savdolar →",
             thCheckNo: "№ Chek",
             thTime: "Vaqt",
             thProducts: "Mahsulotlar",
             thSum: "Summa",
             thProfit: "Foyda",
             thPayment: "To'lov",
-            noSalesYet: "Sotuvlar hali amalga oshirilmadi",
-            phSearchPos: "Mahsulot nomi yoki shtrixkod bo'yicha qidiruv...",
-            allCategories: "Barcha kategoriyalar",
-            cartTitle: "Xaridor savatchasi",
+            noSalesYet: "Hali savdolar o'tkazilmadi",
+            phSearchPos: "Mahsulot nomi yoki shtrixkod bilan qidirish...",
+            allCategories: "Barcha toifalar",
+            cartTitle: "Harid savatchasi",
             btnClear: "Tozalash",
             cartEmpty: "Savatcha bo'sh",
-            cartEmptySub: "Chapdagi ro'yxatdan mahsulot tanlang",
+            cartEmptySub: "Chapdagi ro'yxatdan mahsulotlarni tanlang",
             cartItemsCountLabel: "Chekdagi mahsulotlar:",
-            discountLabel: "Chegirma:",
-            totalToPayLabel: "JAMI TO'LOV:",
+            discountLabel: "Mijozga chegirma:",
+            totalToPayLabel: "TO'LASH UCHUN JAMI:",
             payCash: "Naqd pul",
-            payCard: "Karta (Humo/Uzcard)",
-            payTransfer: "O'tkazma (Click/Payme)",
-            btnCompleteSale: "Sotuvni tasdiqlash",
-            phSearchInv: "Nomi, artikul, shtrixkod bo'yicha qidiruv...",
+            payCard: "Plastik karta",
+            payTransfer: "Click / Payme",
+            payDebt: "Nasiya (Qarzga)",
+            btnCompleteSale: "Savdoni yakunlash",
+            phSearchInv: "Nomi, kodi yoki shtrixkodi bo'yicha qidirish...",
             stockAll: "Barcha qoldiqlar",
-            stockInStock: "Omborda bor",
+            stockInStock: "Mavjud",
             stockLow: "Oz qoldi (≤ 5)",
-            stockOut: "Tugagan (0)",
+            stockOut: "Qolmagan (0)",
             btnAddProduct: "Mahsulot qo'shish",
             thProduct: "Mahsulot",
-            thCategory: "Kategoriya",
-            thCostPrice: "Keltirilgan narx (Kirim)",
+            thCategory: "Toifa",
+            thCostPrice: "Tan narxi",
             thSalePrice: "Sotish narxi",
-            thProfitPercent: "Foyda %",
+            thProfitPercent: "Marja %",
             thStock: "Qoldiq",
-            thStatus: "Holat",
+            thStatus: "Holati",
             thActions: "Amallar",
-            phSearchSales: "Chek raqami yoki mahsulot bo'yicha qidiruv...",
+            phSearchSales: "Chek raqami yoki mahsulot bo'yicha...",
             btnClearHistory: "Tarixni tozalash",
-            thDate: "Sana va Vaqt",
-            thCheckSum: "Chek summasi",
-            thCostSum: "Kirim",
-            thActionReceipt: "Chek / Qaytarish",
-            statCostLabel: "Kirim xarajatlari",
-            statNetProfitLabel: "Sof foyda",
-            statAvgProfitRate: "O'rtacha foyda %",
-            analyticsTableTitle: "Mahsulotlar bo'yicha foyda",
-            thProductName: "Mahsulot nomi",
-            thSoldQty: "Sotildi (dona)",
-            thRevenue: "Tushum",
-            thCost: "Kirim narxi",
-            thShare: "Foydadagi ulushi",
-            settingsBasicTitle: "Asosiy sozlamalar",
-            labelShopName: "Do'koningiz nomi",
-            labelCurrency: "Pul birligi",
-            labelLowStockThreshold: "Qoldiq kamligi haqida ogohlantirish (dona)",
-            btnSaveSettings: "Sozlamalarni saqlash",
-            settingsBackupTitle: "Zaxira nusxasi va Tiklash",
-            settingsBackupSub: "Zaxira faylini (JSON) yuklab olishingiz yoki qayta tiklashingiz mumkin.",
-            btnExportBackup: "Zaxirani yuklab olish (JSON)",
-            btnImportBackup: "Zaxiradan tiklash",
-            btnLoadDemo: "Demo mahsulotlarni yuklash",
-            btnResetAll: "Baza tozalash",
+            thDate: "Sana va vaqt",
             modalAddTitle: "Mahsulot qo'shish",
+            modalEditTitle: "Tahrirlash",
             labelProdName: "Mahsulot nomi *",
-            phProdName: "Masalan: Erkaklar jinsi shimm",
-            labelProdCategory: "Kategoriya",
-            phProdCategory: "Kiyim",
-            labelProdBarcode: "Shtrixkod / Artikul",
-            labelCostPrice: "Keltirilgan narxi (Kirim) *",
-            labelSalePrice: "Sotish narxi *",
-            labelProdStock: "Ombordagi soni (dona) *",
+            labelProdCategory: "Toifa",
+            labelProdBarcode: "Shtrixkod / QR",
+            labelProdCost: "Tan narxi (Kirim) *",
+            labelProdPrice: "Sotish narxi *",
+            labelProdStock: "Ombordagi qoldiq (dona) *",
+            labelProdUnit: "O'lchov birligi",
             btnCancel: "Bekor qilish",
-            btnSaveProduct: "Saqlash",
-            receiptModalTitle: "Kassa Cheki",
-            btnPrintReceipt: "Chop etish / Saqlash",
-            inStock: "Omborda bor",
-            outOfStock: "Tugagan",
-            lowStock: "Oz qoldi"
+            btnSave: "Saqlash",
+            receiptTitle: "To'lov cheki",
+            btnPrint: "Chekni chop etish",
+            settingsBasicTitle: "Do'konning asosiy sozlamalari",
+            labelShopName: "Do'koningiz nomi",
+            labelCurrency: "Pul birligi (Valyuta)",
+            labelLowStockThreshold: "Kam qolganlik chegarasi (dona)",
+            btnSaveSettings: "Sozlamalarni saqlash",
+            settingsBackupTitle: "Zaxira nusxa va Ma'lumotlar bazasi",
+            settingsBackupSub: "Barcha ma'lumotlar brauzeringizda saqlanadi.",
+            btnExportBackup: "JSON nusxasini yuklab olish",
+            btnImportBackup: "Zaxiradan tiklash",
+            btnLoadDemo: "Demo mahsulotlar",
+            btnResetAll: "Baza tozalash",
+            statusInStock: "Mavjud",
+            statusLowStock: "Oz qoldi",
+            statusOutOfStock: "Tugagan",
+            confirmReset: "DIQQAT! Barcha mahsulotlar va savdo tarixi o'chiriladi. Rozimisiz?",
+            resetDone: "Ma'lumotlar bazasi tozalandi.",
+            confirmRefund: "Chekni bekor qilish №",
+            saleRefunded: "Chek bekor qilindi, mahsulotlar omborga qaytarildi.",
+            btnCameraScan: "Skaner (Kamera)",
+            btnScan: "Skaner",
+            btnExportExcel: "Excel (.xlsx)",
+            btnExportSalesExcel: "Savdo eksporti (Excel)",
+            systemOnline: "Kassa onlayn",
+            periodLast7Days: "Oxirgi 7 kun",
+            kpiMarginLabel: "Rentabellik (ROI)",
+            kpiAvgCheck: "O'rtacha chek",
+            kpiInventoryCost: "Ombor tannarxi",
+            kpiPotentialRevenue: "Kutilayotgan tushum"
         }
     };
 
-    // CATEGORY TRANSLATIONS MAP
-    const categoryMap = {
-        'Kiyim': { ru: 'Одежда', uz: 'Kiyim' },
-        'Одежда': { ru: 'Одежда', uz: 'Kiyim' },
-        'Poyabzal': { ru: 'Обувь', uz: 'Poyabzal' },
-        'Обувь': { ru: 'Обувь', uz: 'Poyabzal' },
-        'Elektronika': { ru: 'Электроника', uz: 'Elektronika' },
-        'Электроника': { ru: 'Электроника', uz: 'Elektronika' },
-        'Oziq-ovqat': { ru: 'Продукты', uz: 'Oziq-ovqat' },
-        'Продукты': { ru: 'Продукты', uz: 'Oziq-ovqat' },
-        'Aksessuarlar': { ru: 'Аксессуары', uz: 'Aksessuarlar' },
-        'Аксессуары': { ru: 'Аксессуары', uz: 'Aksessuarlar' }
-    };
-
-    // DEMO PRODUCTS WITH DUAL NAMES
-    const INITIAL_DEMO_PRODUCTS = [
-        { id: 'prod_1', name_ru: 'Мужская рубашка Cotton', name_uz: 'Erkaklar ko\'ylagi (Cotton)', category: 'Одежда', barcode: '460123456701', costPrice: 45000, salePrice: 120000, stock: 15, createdAt: Date.now() },
-        { id: 'prod_2', name_ru: 'Кроссовки Run Pro 500', name_uz: 'Krossovka Run Pro 500', category: 'Обувь', barcode: '460123456702', costPrice: 220000, salePrice: 490000, stock: 8, createdAt: Date.now() },
-        { id: 'prod_3', name_ru: 'Беспроводные наушники AirPod', name_uz: 'Simsiz Quloqchin AirPod', category: 'Электроника', barcode: '460123456703', costPrice: 150000, salePrice: 350000, stock: 4, createdAt: Date.now() },
-        { id: 'prod_4', name_ru: 'Кофе зерновой 1кг', name_uz: 'Kofe Dosh 1kg', category: 'Продукты', barcode: '460123456704', costPrice: 60000, salePrice: 140000, stock: 20, createdAt: Date.now() },
-        { id: 'prod_5', name_ru: 'Чехол силиконовый Silicone Case', name_uz: 'Gʻilof Silicone Case', category: 'Аксессуары', barcode: '460123456705', costPrice: 8000, salePrice: 45000, stock: 3, createdAt: Date.now() }
+    // DEMO PRODUCTS PRESET
+    const DEMO_PRODUCTS = [
+        { id: 1, name: "Футболка Oversize Black", category: "Одежда", barcode: "4780011001", cost: 65000, price: 120000, stock: 18, unit: "шт" },
+        { id: 2, name: "Джинсы Classic Indigo", category: "Одежда", barcode: "4780011002", cost: 110000, price: 195000, stock: 12, unit: "шт" },
+        { id: 3, name: "Кроссовки Ultra Boost", category: "Обувь", barcode: "4780011003", cost: 180000, price: 320000, stock: 4, unit: "шт" },
+        { id: 4, name: "Кофе натуральный 250г", category: "Продукты", barcode: "4780011004", cost: 35000, price: 58000, stock: 25, unit: "шт" },
+        { id: 5, name: "Наушники Wireless Pro", category: "Электроника", barcode: "4780011005", cost: 95000, price: 165000, stock: 3, unit: "шт" },
+        { id: 6, name: "Термокружка Steel 500мл", category: "Посуда", barcode: "4780011006", cost: 42000, price: 75000, stock: 15, unit: "шт" }
     ];
 
+    // APPLICATION STATE
     let state = {
         products: [],
         sales: [],
-        settings: {
-            shopName: 'Мой Магазин',
-            currency: 'so\'m',
-            lowStockThreshold: 5,
-            theme: 'dark'
-        },
-        currentLang: 'ru',
+        debts: [],
         cart: [],
-        chartInstance: null
+        currentLang: 'ru',
+        settings: {
+            shopName: "ShopMaster",
+            currency: "so'm",
+            lowStockThreshold: 5,
+            theme: "dark",
+            soundEnabled: true,
+            confettiEnabled: true
+        }
     };
 
+    let salesChartInstance = null;
+    let analyticsRevenueChartInstance = null;
+    let analyticsCategoryChartInstance = null;
+    let html5QrScannerInstance = null;
+    let audioContext = null;
+
+    // =========================================================================
+    // AUDIO SYNTHESIZER (Pure Web Audio API — No external audio files needed)
+    // =========================================================================
+    function getAudioContext() {
+        if (!audioContext) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) audioContext = new AudioContextClass();
+        }
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        return audioContext;
+    }
+
+    function playScannerBeep() {
+        if (!state.settings.soundEnabled) return;
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1200, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.06);
+            gain.gain.setValueAtTime(0.18, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.06);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.07);
+        } catch (e) {
+            console.warn("Audio error", e);
+        }
+    }
+
+    function playCheckoutChime() {
+        if (!state.settings.soundEnabled) return;
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 arpeggio
+            freqs.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                const start = ctx.currentTime + idx * 0.07;
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, start);
+                gain.gain.setValueAtTime(0.2, start);
+                gain.gain.exponentialRampToValueAtTime(0.005, start + 0.35);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(start);
+                osc.stop(start + 0.36);
+            });
+        } catch (e) {
+            console.warn("Chime error", e);
+        }
+    }
+
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
     function initApp() {
-        loadStateFromStorage();
+        loadState();
         applyTheme(state.settings.theme);
         applyLanguage(state.currentLang);
         updateDateDisplay();
-        bindEvents();
-        bindMobileEvents();
+        bindGlobalEvents();
         renderAll();
     }
 
-    function bindMobileEvents() {
-        // Mobile bottom nav buttons
-        document.querySelectorAll('.mobile-nav-btn[data-tab]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-tab');
-                switchTab(tab);
-                document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                // sync desktop sidebar
-                document.querySelectorAll('.nav-btn[data-tab]').forEach(nb => {
-                    nb.classList.toggle('active', nb.getAttribute('data-tab') === tab);
-                });
-            });
-        });
-
-        // Mobile language selector (synced with desktop)
-        const langSelectMobile = document.getElementById('langSelectMobile');
-        if (langSelectMobile) {
-            langSelectMobile.addEventListener('change', (e) => {
-                applyLanguage(e.target.value);
-                renderAll();
-            });
-        }
-
-        // Mobile theme toggle
-        const themeToggleMobile = document.getElementById('themeToggleMobile');
-        if (themeToggleMobile) {
-            themeToggleMobile.addEventListener('click', () => {
-                const newTheme = state.settings.theme === 'dark' ? 'light' : 'dark';
-                state.settings.theme = newTheme;
-                saveSettings();
-                applyTheme(newTheme);
-                // update icon
-                const icon = themeToggleMobile.querySelector('i');
-                if (icon) icon.className = newTheme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
-            });
-        }
-
-        // Mobile action bar buttons
-        const mobileAddProductBtn = document.getElementById('mobileAddProductBtn');
-        if (mobileAddProductBtn) {
-            mobileAddProductBtn.addEventListener('click', openAddProductModal);
-        }
-
-        const mobileNewSaleBtn = document.getElementById('mobileNewSaleBtn');
-        if (mobileNewSaleBtn) {
-            mobileNewSaleBtn.addEventListener('click', () => switchTab('pos'));
-        }
-    }
-
-    function loadStateFromStorage() {
+    function loadState() {
         try {
-            const storedProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-            const storedSales = localStorage.getItem(STORAGE_KEYS.SALES);
-            const storedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-            const storedLang = localStorage.getItem(STORAGE_KEYS.LANG);
+            const p = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+            state.products = p ? JSON.parse(p) : DEMO_PRODUCTS;
 
-            if (storedLang) state.currentLang = storedLang;
+            const s = localStorage.getItem(STORAGE_KEYS.SALES);
+            state.sales = s ? JSON.parse(s) : [];
 
-            if (storedProducts) {
-                state.products = JSON.parse(storedProducts);
-            } else {
-                state.products = [...INITIAL_DEMO_PRODUCTS];
-                saveProducts();
-            }
+            const d = localStorage.getItem(STORAGE_KEYS.DEBTS);
+            state.debts = d ? JSON.parse(d) : [];
 
-            if (storedSales) {
-                state.sales = JSON.parse(storedSales);
-            } else {
-                state.sales = [];
-                saveSales();
-            }
+            const set = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+            if (set) state.settings = { ...state.settings, ...JSON.parse(set) };
 
-            if (storedSettings) {
-                state.settings = { ...state.settings, ...JSON.parse(storedSettings) };
-            } else {
-                saveSettings();
-            }
-        } catch (err) {
-            console.error('Error loading data:', err);
-            state.products = [...INITIAL_DEMO_PRODUCTS];
+            const l = localStorage.getItem(STORAGE_KEYS.LANG);
+            if (l) state.currentLang = l;
+        } catch (e) {
+            state.products = DEMO_PRODUCTS;
             state.sales = [];
+            state.debts = [];
         }
     }
 
     function saveProducts() { localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(state.products)); }
     function saveSales() { localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(state.sales)); }
+    function saveDebts() { localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(state.debts)); }
     function saveSettings() { localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(state.settings)); }
     function saveLang() { localStorage.setItem(STORAGE_KEYS.LANG, state.currentLang); }
 
-    function getProductName(p) {
-        if (state.currentLang === 'uz') {
-            return p.name_uz || p.name || p.name_ru || '';
-        } else {
-            return p.name_ru || p.name || p.name_uz || '';
-        }
+    function formatCurrency(amount) {
+        const val = Number(amount) || 0;
+        return val.toLocaleString('ru-RU') + ' ' + (state.settings.currency || "so'm");
     }
 
-    function getCategoryName(cat) {
-        if (!cat) return '';
-        if (categoryMap[cat]) {
-            return categoryMap[cat][state.currentLang] || cat;
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        const icon = document.querySelector('#themeToggleBtn i');
+        const text = document.getElementById('themeToggleText');
+        const mIcon = document.querySelector('#themeToggleMobile i');
+        if (theme === 'dark') {
+            if (icon) icon.className = 'fa-solid fa-moon';
+            if (text) text.textContent = 'Тёмная тема';
+            if (mIcon) mIcon.className = 'fa-solid fa-moon';
+        } else {
+            if (icon) icon.className = 'fa-solid fa-sun';
+            if (text) text.textContent = 'Светлая тема';
+            if (mIcon) mIcon.className = 'fa-solid fa-sun';
         }
-        return cat;
     }
 
     function applyLanguage(lang) {
         state.currentLang = lang;
         saveLang();
+        const dict = i18n[lang] || i18n.ru;
 
-        // Sync both desktop and mobile language selectors
+        document.querySelectorAll('[data-i18n]').forEach(elem => {
+            const key = elem.getAttribute('data-i18n');
+            if (dict[key]) elem.textContent = dict[key];
+        });
+
+        document.querySelectorAll('[data-i18n-ph]').forEach(elem => {
+            const key = elem.getAttribute('data-i18n-ph');
+            if (dict[key]) elem.placeholder = dict[key];
+        });
+
         const langSelect = document.getElementById('langSelect');
         if (langSelect) langSelect.value = lang;
         const langSelectMobile = document.getElementById('langSelectMobile');
         if (langSelectMobile) langSelectMobile.value = lang;
-
-        const dict = i18n[lang] || i18n.ru;
-
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (dict[key]) el.textContent = dict[key];
-        });
-
-        document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-            const key = el.getAttribute('data-i18n-ph');
-            if (dict[key]) el.placeholder = dict[key];
-        });
-    }
-
-    function formatCurrency(amount) {
-        const val = Number(amount) || 0;
-        return val.toLocaleString('ru-RU') + ' ' + state.settings.currency;
-    }
-
-    function applyTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        const themeBtnText = document.getElementById('themeToggleText');
-        const themeBtnIcon = document.querySelector('#themeToggleBtn i');
-        if (themeBtnText && themeBtnIcon) {
-            if (theme === 'dark') {
-                themeBtnText.textContent = state.currentLang === 'uz' ? 'Tungi rejim' : 'Тёмная тема';
-                themeBtnIcon.className = 'fa-solid fa-moon';
-            } else {
-                themeBtnText.textContent = state.currentLang === 'uz' ? 'Kunduzgi rejim' : 'Светлая тема';
-                themeBtnIcon.className = 'fa-solid fa-sun';
-            }
-        }
     }
 
     function updateDateDisplay() {
+        const dateElem = document.getElementById('currentDateDisplay');
+        if (!dateElem) return;
         const now = new Date();
-        const options = { day: 'numeric', month: 'short', year: 'numeric' };
-        const dateText = document.getElementById('dateText');
-        if (dateText) dateText.textContent = now.toLocaleDateString(state.currentLang === 'uz' ? 'uz-UZ' : 'ru-RU', options);
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        dateElem.innerHTML = `<i class="fa-regular fa-calendar"></i> <span>${d}.${m}.${y}</span>`;
     }
 
+    // =========================================================================
+    // CENTRALIZED BULLETPROOF TAB SWITCHER
+    // =========================================================================
+    function switchTab(targetTab) {
+        if (!targetTab) return;
+
+        // Desktop nav active indicator
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        const desktopBtn = document.querySelector(`.nav-btn[data-tab="${targetTab}"]`);
+        if (desktopBtn) desktopBtn.classList.add('active');
+
+        // Mobile bottom nav active indicator
+        document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+        const mobileBtn = document.querySelector(`.mobile-nav-btn[data-tab="${targetTab}"]`);
+        if (mobileBtn) mobileBtn.classList.add('active');
+
+        // Switch visible tab section
+        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+        const targetSection = document.getElementById(`tab-${targetTab}`);
+        if (targetSection) targetSection.classList.add('active');
+
+        // Update Desktop Header Titles
+        const pageTitle = document.getElementById('pageTitle');
+        const pageSub = document.getElementById('pageSubTitle');
+        const dict = i18n[state.currentLang] || i18n.ru;
+
+        const titlesMap = {
+            dashboard: [dict.titleDashboard, dict.subTitleDashboard],
+            pos: [dict.navPos, dict.phSearchPos],
+            inventory: [dict.navInventory, dict.phSearchInv],
+            sales: [dict.navSales, dict.phSearchSales],
+            analytics: [dict.navAnalytics, "Детальные финансовые графики и отчетность"],
+            debts: [dict.navDebts, "Книга учета долгов покупателей (Nasiya daftari)"],
+            settings: [dict.navSettings, dict.settingsBasicTitle]
+        };
+
+        if (pageTitle && pageSub && titlesMap[targetTab]) {
+            pageTitle.textContent = titlesMap[targetTab][0];
+            pageSub.textContent = titlesMap[targetTab][1];
+        }
+
+        // Render tab specific data
+        if (targetTab === 'dashboard') {
+            renderDashboard();
+            renderSalesChart();
+        } else if (targetTab === 'pos') {
+            renderPOSCatalog();
+            renderPOSCart();
+        } else if (targetTab === 'inventory') {
+            renderInventoryTable();
+        } else if (targetTab === 'sales') {
+            renderSalesHistory();
+        } else if (targetTab === 'analytics') {
+            renderAnalytics();
+        } else if (targetTab === 'debts') {
+            renderDebtsTable();
+        }
+
+        // Smooth scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // =========================================================================
+    // RENDER ALL DATA
+    // =========================================================================
     function renderAll() {
         updateBrandAndSettingsUI();
         renderDashboard();
+        renderSalesChart();
         renderPOSCatalog();
         renderPOSCart();
         renderInventoryTable();
         renderSalesHistory();
         renderAnalytics();
-        checkLowStockAlerts();
+        renderDebtsTable();
     }
 
     function updateBrandAndSettingsUI() {
-        const brandElem = document.getElementById('displayShopName');
-        if (brandElem) brandElem.textContent = state.settings.shopName;
-        // Update mobile top bar shop name too
-        const mobileShopName = document.getElementById('mobileShopName');
-        if (mobileShopName) mobileShopName.textContent = state.settings.shopName;
+        const name = state.settings.shopName || "ShopMaster";
+        const dName = document.getElementById('displayShopName');
+        if (dName) dName.textContent = name;
+        const mName = document.getElementById('mobileShopName');
+        if (mName) mName.textContent = name;
 
-        const setShopName = document.getElementById('settingShopName');
-        if (setShopName) setShopName.value = state.settings.shopName;
+        const sName = document.getElementById('settingShopName');
+        if (sName) sName.value = name;
+        const sCurr = document.getElementById('settingCurrency');
+        if (sCurr) sCurr.value = state.settings.currency || "so'm";
+        const sLow = document.getElementById('settingLowStockThreshold');
+        if (sLow) sLow.value = state.settings.lowStockThreshold || 5;
 
-        const setCurr = document.getElementById('settingCurrency');
-        if (setCurr) setCurr.value = state.settings.currency;
-
-        const setLow = document.getElementById('settingLowStockThreshold');
-        if (setLow) setLow.value = state.settings.lowStockThreshold;
+        const sSound = document.getElementById('settingSoundToggle');
+        if (sSound) sSound.checked = state.settings.soundEnabled !== false;
+        const sConf = document.getElementById('settingConfettiToggle');
+        if (sConf) sConf.checked = state.settings.confettiEnabled !== false;
     }
 
+    // =========================================================================
+    // TAB 1: DASHBOARD
+    // =========================================================================
     function renderDashboard() {
         let totalRevenue = 0;
-        let totalCost = 0;
+        let totalProfit = 0;
+        let totalSalesCount = state.sales.length;
+        let totalStockUnits = 0;
+        let totalStockWorth = 0;
 
         state.sales.forEach(sale => {
-            totalRevenue += sale.totalAmount;
-            totalCost += sale.totalCost;
+            totalRevenue += sale.total;
+            totalProfit += sale.profit || 0;
         });
 
-        const totalProfit = totalRevenue - totalCost;
-        const totalItemsCount = state.products.reduce((acc, p) => acc + (p.stock || 0), 0);
-        const totalInventoryValue = state.products.reduce((acc, p) => acc + ((p.stock || 0) * (p.costPrice || 0)), 0);
-
-        const unitStr = i18n[state.currentLang].unit;
-
-        document.getElementById('statTotalRevenue').textContent = formatCurrency(totalRevenue);
-        document.getElementById('statTotalProfit').textContent = formatCurrency(totalProfit);
-        document.getElementById('statTotalItems').textContent = totalItemsCount + ' ' + unitStr;
-        document.getElementById('statInventoryValue').textContent = (state.currentLang === 'uz' ? 'Kirim qiymati: ' : 'Стоимость закупки: ') + formatCurrency(totalInventoryValue);
-        document.getElementById('statSalesCount').textContent = state.sales.length;
-
-        renderSalesChart();
-
-        const tbody = document.getElementById('recentSalesTbody');
-        tbody.innerHTML = '';
-
-        if (state.sales.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">${i18n[state.currentLang].noSalesYet}</td></tr>`;
-        } else {
-            const recent = [...state.sales].reverse().slice(0, 5);
-            recent.forEach(sale => {
-                const tr = document.createElement('tr');
-                const timeStr = new Date(sale.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                const itemsStr = sale.items.map(i => i.name + ` (${i.qty})`).join(', ');
-
-                tr.innerHTML = `
-                    <td><strong>#${sale.receiptNo}</strong></td>
-                    <td>${timeStr}</td>
-                    <td class="text-truncate" style="max-width: 220px;" title="${itemsStr}">${itemsStr}</td>
-                    <td><strong>${formatCurrency(sale.totalAmount)}</strong></td>
-                    <td class="text-accent">+${formatCurrency(sale.profit)}</td>
-                    <td><span class="badge" style="background:rgba(59,130,246,0.15); color:var(--primary); padding:4px 8px; border-radius:6px;">${getPaymentLabel(sale.paymentType)}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        const topListElem = document.getElementById('topProductsList');
-        topListElem.innerHTML = '';
-
-        const productSalesMap = {};
-        state.sales.forEach(sale => {
-            sale.items.forEach(item => {
-                if (!productSalesMap[item.id]) {
-                    productSalesMap[item.id] = { name: item.name, qty: 0, revenue: 0 };
-                }
-                productSalesMap[item.id].qty += item.qty;
-                productSalesMap[item.id].revenue += item.total;
-            });
+        state.products.forEach(p => {
+            totalStockUnits += Number(p.stock) || 0;
+            totalStockWorth += (Number(p.cost) || 0) * (Number(p.stock) || 0);
         });
 
-        const sortedTop = Object.values(productSalesMap).sort((a, b) => b.qty - a.qty).slice(0, 5);
+        const revEl = document.getElementById('statRevenue');
+        if (revEl) revEl.textContent = formatCurrency(totalRevenue);
 
-        if (sortedTop.length === 0) {
-            topListElem.innerHTML = `<div class="empty-state">${i18n[state.currentLang].noSalesData}</div>`;
-        } else {
-            sortedTop.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'top-prod-item d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom';
-                div.style.borderBottom = '1px solid var(--border-color)';
-                div.innerHTML = `
-                    <div>
-                        <div style="font-weight:700; font-size:14px;">${item.name}</div>
-                        <div class="text-muted" style="font-size:12px;">${state.currentLang === 'uz' ? 'Sotildi' : 'Продано'}: ${item.qty} ${unitStr}</div>
-                    </div>
-                    <div style="font-weight:800; color:var(--accent);">${formatCurrency(item.revenue)}</div>
-                `;
-                topListElem.appendChild(div);
-            });
-        }
-    }
+        const profEl = document.getElementById('statProfit');
+        if (profEl) profEl.textContent = formatCurrency(totalProfit);
 
-    function renderSalesChart() {
-        const ctx = document.getElementById('salesChart');
-        if (!ctx) return;
+        const itemsEl = document.getElementById('statItemsCount');
+        if (itemsEl) itemsEl.textContent = `${totalStockUnits.toLocaleString()} ${i18n[state.currentLang].unit}`;
 
-        const daysMap = {};
-        const now = new Date();
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date(now);
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toLocaleDateString(state.currentLang === 'uz' ? 'uz-UZ' : 'ru-RU', { day: 'numeric', month: 'short' });
-            daysMap[dateStr] = { revenue: 0, profit: 0 };
-        }
+        const worthEl = document.getElementById('statStockWorth');
+        if (worthEl) worthEl.textContent = `Оценка: ${formatCurrency(totalStockWorth)}`;
 
-        state.sales.forEach(s => {
-            const dateStr = new Date(s.timestamp).toLocaleDateString(state.currentLang === 'uz' ? 'uz-UZ' : 'ru-RU', { day: 'numeric', month: 'short' });
-            if (daysMap[dateStr]) {
-                daysMap[dateStr].revenue += s.totalAmount;
-                daysMap[dateStr].profit += s.profit;
-            }
-        });
+        const countEl = document.getElementById('statSalesCount');
+        if (countEl) countEl.textContent = totalSalesCount.toLocaleString();
 
-        const labels = Object.keys(daysMap);
-        const revenueData = labels.map(l => daysMap[l].revenue);
-        const profitData = labels.map(l => daysMap[l].profit);
+        const avg = totalSalesCount > 0 ? Math.round(totalRevenue / totalSalesCount) : 0;
+        const avgEl = document.getElementById('statAvgCheck');
+        if (avgEl) avgEl.textContent = `Средний чек: ${formatCurrency(avg)}`;
 
-        if (state.chartInstance) {
-            state.chartInstance.destroy();
-        }
-
-        if (typeof Chart !== 'undefined') {
-            state.chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: state.currentLang === 'uz' ? 'Tushum (Savdo)' : 'Выручка',
-                            data: revenueData,
-                            borderColor: '#3B82F6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                            fill: true,
-                            tension: 0.3,
-                            borderWidth: 3
-                        },
-                        {
-                            label: state.currentLang === 'uz' ? 'Sof foyda' : 'Прибыль',
-                            data: profitData,
-                            borderColor: '#10B981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                            fill: true,
-                            tension: 0.3,
-                            borderWidth: 3
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#94A3B8' } }
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: '#94A3B8' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94A3B8' } }
-                    }
-                }
-            });
-        }
-    }
-
-    function getPaymentLabel(type) {
-        const lang = state.currentLang;
-        if (type === 'Cash') return lang === 'uz' ? 'Naqd' : 'Наличные';
-        if (type === 'Card') return lang === 'uz' ? 'Karta (Humo/Uzcard)' : 'Карта';
-        if (type === 'Transfer') return lang === 'uz' ? 'O\'tkazma (Click)' : 'Перевод';
-        return type;
+        checkLowStockAlerts();
+        renderTopProducts();
+        renderDashboardRecentSales();
     }
 
     function checkLowStockAlerts() {
         const threshold = state.settings.lowStockThreshold || 5;
-        const lowStockProds = state.products.filter(p => p.stock <= threshold);
+        const lowProducts = state.products.filter(p => Number(p.stock) <= threshold);
+        const banner = document.getElementById('lowStockAlertBanner');
+        const namesEl = document.getElementById('lowStockItemsNames');
 
-        const banner = document.getElementById('lowStockBanner');
-        const textElem = document.getElementById('lowStockListText');
-        const unitStr = i18n[state.currentLang].unit;
-
-        if (lowStockProds.length > 0) {
-            banner.style.display = 'flex';
-            textElem.textContent = lowStockProds.map(p => `${getProductName(p)} (${p.stock} ${unitStr})`).join(', ');
+        if (lowProducts.length > 0) {
+            if (banner) banner.style.display = 'flex';
+            if (namesEl) {
+                namesEl.innerHTML = lowProducts.map(p =>
+                    `<strong>${p.name}</strong> (${p.stock} ${p.unit})`
+                ).join(', ');
+            }
         } else {
-            banner.style.display = 'none';
+            if (banner) banner.style.display = 'none';
         }
     }
 
-    function renderPOSCatalog() {
-        const grid = document.getElementById('posProductsGrid');
-        const searchVal = (document.getElementById('posSearchInput').value || '').toLowerCase();
-        const activeChip = document.querySelector('#posCategoryChips .chip.active');
-        const activeCat = activeChip ? activeChip.dataset.cat : 'all';
-        const unitStr = i18n[state.currentLang].unit;
+    function renderTopProducts() {
+        const container = document.getElementById('topProductsList');
+        if (!container) return;
 
-        const rawCategories = Array.from(new Set(state.products.map(p => p.category || 'General')));
-        const chipsScroll = document.getElementById('posCategoryChips');
-        chipsScroll.innerHTML = `<button class="chip ${activeCat === 'all' ? 'active' : ''}" data-cat="all">${i18n[state.currentLang].allCategories}</button>`;
-
-        rawCategories.forEach(cat => {
-            const displayCat = getCategoryName(cat);
-            const btn = document.createElement('button');
-            btn.className = `chip ${activeCat === cat ? 'active' : ''}`;
-            btn.dataset.cat = cat;
-            btn.textContent = displayCat;
-            btn.onclick = () => {
-                document.querySelectorAll('#posCategoryChips .chip').forEach(c => c.classList.remove('active'));
-                btn.classList.add('active');
-                renderPOSCatalog();
-            };
-            chipsScroll.appendChild(btn);
+        const productSalesMap = {};
+        state.sales.forEach(sale => {
+            sale.items.forEach(it => {
+                if (!productSalesMap[it.name]) {
+                    productSalesMap[it.name] = { name: it.name, qty: 0, sum: 0 };
+                }
+                productSalesMap[it.name].qty += it.qty;
+                productSalesMap[it.name].sum += it.price * it.qty;
+            });
         });
 
-        let filtered = state.products.filter(p => {
-            const pName = getProductName(p).toLowerCase();
-            const matchesSearch = pName.includes(searchVal) || (p.barcode && p.barcode.includes(searchVal));
-            const matchesCat = (activeCat === 'all') || (p.category === activeCat);
-            return matchesSearch && matchesCat;
-        });
-
-        grid.innerHTML = '';
-        if (filtered.length === 0) {
-            grid.innerHTML = `<div class="empty-state w-100 text-center py-5 text-muted" style="grid-column: 1/-1;">${state.currentLang === 'uz' ? 'Mahsulotlar topilmadi' : 'Товары не найдены'}</div>`;
+        const sorted = Object.values(productSalesMap).sort((a, b) => b.qty - a.qty).slice(0, 5);
+        if (sorted.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state-card" style="padding:20px;text-align:center;color:var(--text-muted);">
+                    <i class="fa-solid fa-chart-column" style="font-size:24px;margin-bottom:8px;"></i>
+                    <p>Нет данных о продажах</p>
+                </div>`;
             return;
         }
 
-        filtered.forEach(p => {
-            const card = document.createElement('div');
-            const isOutOfStock = p.stock <= 0;
-            const pName = getProductName(p);
-            card.className = `product-pos-card ${isOutOfStock ? 'out-of-stock' : ''}`;
-            card.innerHTML = `
-                <div class="product-name">${pName}</div>
-                <div class="product-price">${formatCurrency(p.salePrice)}</div>
-                <div class="product-stock-tag ${p.stock <= state.settings.lowStockThreshold ? 'text-warning' : ''}">${state.currentLang === 'uz' ? 'Qoldiq' : 'Остаток'}: ${p.stock} ${unitStr}</div>
-            `;
-            if (!isOutOfStock) {
-                card.onclick = () => addToCart(p);
+        container.innerHTML = sorted.map((item, idx) => `
+            <div class="top-product-item">
+                <div class="top-product-info">
+                    <span class="top-rank rank-${idx + 1}">${idx + 1}</span>
+                    <div>
+                        <strong style="font-size:12.5px;display:block;">${item.name}</strong>
+                        <small class="text-muted">${item.qty} ${i18n[state.currentLang].unit}</small>
+                    </div>
+                </div>
+                <strong class="text-accent" style="font-size:13px;">${formatCurrency(item.sum)}</strong>
+            </div>
+        `).join('');
+    }
+
+    function renderDashboardRecentSales() {
+        const tbody = document.getElementById('dashboardRecentSalesBody');
+        if (!tbody) return;
+
+        const recent = [...state.sales].reverse().slice(0, 5);
+        if (recent.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Нет проведенных продаж</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = recent.map(sale => `
+            <tr>
+                <td><strong>#${sale.id}</strong></td>
+                <td><small class="text-muted">${sale.time || ''} ${sale.date || ''}</small></td>
+                <td>${sale.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</td>
+                <td><strong class="text-accent">${formatCurrency(sale.total)}</strong></td>
+                <td><span class="text-success">+${formatCurrency(sale.profit || 0)}</span></td>
+                <td><span class="status-badge badge-primary">${getPaymentLabel(sale.paymentType)}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    function getPaymentLabel(type) {
+        if (type === 'Card') return 'Карта';
+        if (type === 'Transfer') return 'Click / Payme';
+        if (type === 'Debt') return 'В долг (Qarz)';
+        return 'Наличные';
+    }
+
+    // Chart.js Area Chart
+    function renderSalesChart() {
+        const ctx = document.getElementById('salesChart');
+        if (!ctx || typeof Chart === 'undefined') return;
+
+        // Group last 7 days
+        const days = [];
+        const revData = [];
+        const profData = [];
+
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+            days.push(dateStr);
+
+            let dayRev = 0;
+            let dayProf = 0;
+            state.sales.forEach(sale => {
+                if (sale.date === dateStr || (sale.timestamp && new Date(sale.timestamp).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) === dateStr)) {
+                    dayRev += sale.total;
+                    dayProf += sale.profit || 0;
+                }
+            });
+            revData.push(dayRev);
+            profData.push(dayProf);
+        }
+
+        if (salesChartInstance) salesChartInstance.destroy();
+
+        salesChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: days,
+                datasets: [
+                    {
+                        label: 'Выручка',
+                        data: revData,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#3B82F6'
+                    },
+                    {
+                        label: 'Чистая прибыль',
+                        data: profData,
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#10B981'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#94A3B8', font: { family: 'Plus Jakarta Sans', size: 12 } }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94A3B8' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94A3B8' }
+                    }
+                }
             }
-            grid.appendChild(card);
         });
     }
 
+    // =========================================================================
+    // TAB 2: POS CASH REGISTER
+    // =========================================================================
+    let currentPOSCategory = 'all';
+
+    function renderPOSCatalog() {
+        const grid = document.getElementById('posProductsGrid');
+        if (!grid) return;
+
+        const chipsBox = document.getElementById('posCategoryChips');
+        const searchInput = document.getElementById('posSearchInput');
+        const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+        // Extract Categories
+        const categories = Array.from(new Set(state.products.map(p => p.category || "Общее"))).filter(Boolean);
+        if (chipsBox) {
+            chipsBox.innerHTML = `
+                <button class="chip ${currentPOSCategory === 'all' ? 'active' : ''}" data-cat="all">
+                    ${i18n[state.currentLang].allCategories}
+                </button>
+                ${categories.map(c => `
+                    <button class="chip ${currentPOSCategory === c ? 'active' : ''}" data-cat="${c}">
+                        ${c}
+                    </button>
+                `).join('')}
+            `;
+        }
+
+        // Filter products
+        const filtered = state.products.filter(p => {
+            const matchesCat = currentPOSCategory === 'all' || p.category === currentPOSCategory;
+            const matchesQuery = !query ||
+                p.name.toLowerCase().includes(query) ||
+                (p.barcode && p.barcode.toLowerCase().includes(query));
+            return matchesCat && matchesQuery;
+        });
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">
+                    <i class="fa-solid fa-box-open" style="font-size:32px;margin-bottom:10px;"></i>
+                    <p>Товары не найдены</p>
+                </div>`;
+            return;
+        }
+
+        // Icon picker helper by category
+        const getCatIcon = (cat) => {
+            const c = (cat || '').toLowerCase();
+            if (c.includes('одежд') || c.includes('киим')) return 'fa-shirt';
+            if (c.includes('обув') || c.includes('пой')) return 'fa-shoe-prints';
+            if (c.includes('продукт') || c.includes('озиқ')) return 'fa-apple-whole';
+            if (c.includes('напит') || c.includes('ичим')) return 'fa-bottle-water';
+            if (c.includes('электр') || c.includes('тех')) return 'fa-headphones';
+            if (c.includes('посуд')) return 'fa-mug-hot';
+            return 'fa-box';
+        };
+
+        grid.innerHTML = filtered.map(p => {
+            const stock = Number(p.stock) || 0;
+            let stockClass = '';
+            let stockText = `${stock} ${p.unit}`;
+            if (stock <= 0) {
+                stockClass = 'out';
+                stockText = '0';
+            } else if (stock <= 5) {
+                stockClass = 'low';
+            }
+
+            return `
+                <div class="product-pos-card" data-product-id="${p.id}">
+                    <div class="product-card-top">
+                        <span class="product-category-tag">${p.category || 'Товар'}</span>
+                        <span class="product-stock-pill ${stockClass}">${stockText}</span>
+                    </div>
+                    <div class="product-icon-wrap">
+                        <i class="fa-solid ${getCatIcon(p.category)}"></i>
+                    </div>
+                    <h4 class="product-name" title="${p.name}">${p.name}</h4>
+                    <div class="product-price">${formatCurrency(p.price)}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
     function addToCart(product) {
-        const existing = state.cart.find(item => item.product.id === product.id);
-        const unitStr = i18n[state.currentLang].unit;
+        if (!product) return;
+        if (product.stock <= 0) {
+            alert('Товара нет в наличии!');
+            return;
+        }
+
+        const existing = state.cart.find(it => it.id === product.id);
         if (existing) {
-            if (existing.qty < product.stock) {
-                existing.qty++;
-            } else {
-                alert(state.currentLang === 'uz' ? `Omborda faqat ${product.stock} ${unitStr} bor.` : `На складе только ${product.stock} ${unitStr}.`);
+            if (existing.qty + 1 > product.stock) {
+                alert(`Нельзя добавить больше, на складе всего ${product.stock} ${product.unit}`);
                 return;
             }
+            existing.qty += 1;
         } else {
-            state.cart.push({ product: product, qty: 1 });
+            state.cart.push({
+                id: product.id,
+                name: product.name,
+                price: Number(product.price),
+                cost: Number(product.cost),
+                unit: product.unit,
+                stock: Number(product.stock),
+                qty: 1
+            });
         }
+
+        playScannerBeep();
         renderPOSCart();
     }
 
     function renderPOSCart() {
-        const cartList = document.getElementById('cartItemsList');
-        const cartBadge = document.getElementById('cartCountBadge');
-        const itemCountElem = document.getElementById('cartItemCount');
+        const list = document.getElementById('cartItemsList');
+        const countBadge = document.getElementById('cartCountBadge');
+        const mobileDot = document.getElementById('mobileCartDot');
+        const itemCountEl = document.getElementById('cartItemCount');
         const totalDisplay = document.getElementById('cartTotalDisplay');
         const checkoutBtn = document.getElementById('checkoutBtn');
-        const discountInput = document.getElementById('cartDiscountInput');
-        const unitStr = i18n[state.currentLang].unit;
 
-        const totalQty = state.cart.reduce((acc, item) => acc + item.qty, 0);
+        const totalItemsCount = state.cart.reduce((sum, it) => sum + it.qty, 0);
 
-        if (cartBadge) {
-            if (totalQty > 0) {
-                cartBadge.style.display = 'inline-block';
-                cartBadge.textContent = totalQty;
-            } else {
-                cartBadge.style.display = 'none';
-            }
+        if (countBadge) {
+            countBadge.textContent = totalItemsCount;
+            countBadge.style.display = totalItemsCount > 0 ? 'inline-block' : 'none';
+        }
+        if (mobileDot) {
+            mobileDot.style.display = totalItemsCount > 0 ? 'block' : 'none';
+        }
+        if (itemCountEl) {
+            itemCountEl.textContent = `${totalItemsCount} ${i18n[state.currentLang].unit}`;
         }
 
         if (state.cart.length === 0) {
-            cartList.innerHTML = `
-                <div class="empty-cart-state">
-                    <i class="fa-solid fa-basket-shopping"></i>
-                    <p>${i18n[state.currentLang].cartEmpty}</p>
-                    <small class="text-muted">${i18n[state.currentLang].cartEmptySub}</small>
-                </div>
-            `;
-            itemCountElem.textContent = '0 ' + unitStr;
-            totalDisplay.textContent = formatCurrency(0);
-            checkoutBtn.disabled = true;
+            if (list) {
+                list.innerHTML = `
+                    <div class="empty-cart-state">
+                        <div class="empty-icon-wrap">
+                            <i class="fa-solid fa-basket-shopping"></i>
+                        </div>
+                        <p>${i18n[state.currentLang].cartEmpty}</p>
+                        <small class="text-muted">${i18n[state.currentLang].cartEmptySub}</small>
+                    </div>`;
+            }
+            if (totalDisplay) totalDisplay.textContent = formatCurrency(0);
+            if (checkoutBtn) checkoutBtn.disabled = true;
+            updateCashChange(0);
             return;
         }
 
-        cartList.innerHTML = '';
-        let subtotal = 0;
+        if (checkoutBtn) checkoutBtn.disabled = false;
 
-        state.cart.forEach((item, index) => {
-            const pName = getProductName(item.product);
-            const itemTotal = item.product.salePrice * item.qty;
-            subtotal += itemTotal;
-
-            const div = document.createElement('div');
-            div.className = 'cart-item-row';
-            div.innerHTML = `
-                <div class="cart-item-info">
-                    <span class="cart-item-title">${pName}</span>
-                    <span class="cart-item-price">${formatCurrency(item.product.salePrice)} × ${item.qty} = <strong>${formatCurrency(itemTotal)}</strong></span>
+        if (list) {
+            list.innerHTML = state.cart.map((item, idx) => `
+                <div class="cart-item-card">
+                    <div class="cart-item-info">
+                        <div class="cart-item-title">${item.name}</div>
+                        <div class="cart-item-price">${formatCurrency(item.price)} × ${item.qty} = <strong>${formatCurrency(item.price * item.qty)}</strong></div>
+                    </div>
+                    <div class="cart-item-controls">
+                        <button class="qty-btn" onclick="window.updateCartQty(${idx}, -1)">-</button>
+                        <span class="qty-val">${item.qty}</span>
+                        <button class="qty-btn" onclick="window.updateCartQty(${idx}, 1)">+</button>
+                    </div>
                 </div>
-                <div class="cart-qty-ctrl">
-                    <button class="qty-btn" onclick="updateCartQty(${index}, -1)">-</button>
-                    <span>${item.qty}</span>
-                    <button class="qty-btn" onclick="updateCartQty(${index}, 1)">+</button>
-                </div>
-            `;
-            cartList.appendChild(div);
-        });
+            `).join('');
+        }
 
-        const discountPercent = Math.min(100, Math.max(0, Number(discountInput.value) || 0));
-        const finalTotal = subtotal * (1 - discountPercent / 100);
+        // Calculate Subtotal & Discount
+        const subtotal = state.cart.reduce((sum, it) => sum + (it.price * it.qty), 0);
+        const discInput = document.getElementById('cartDiscountInput');
+        const discPercent = discInput ? Math.min(100, Math.max(0, Number(discInput.value) || 0)) : 0;
+        const discountAmount = Math.round(subtotal * (discPercent / 100));
+        const finalTotal = Math.max(0, subtotal - discountAmount);
 
-        itemCountElem.textContent = totalQty + ' ' + unitStr;
-        totalDisplay.textContent = formatCurrency(finalTotal);
-        checkoutBtn.disabled = false;
+        if (totalDisplay) totalDisplay.textContent = formatCurrency(finalTotal);
+        updateCashChange(finalTotal);
     }
 
-    window.updateCartQty = function (index, change) {
-        const item = state.cart[index];
-        const unitStr = i18n[state.currentLang].unit;
-        if (!item) return;
-
+    window.updateCartQty = function (idx, change) {
+        if (!state.cart[idx]) return;
+        const item = state.cart[idx];
         const newQty = item.qty + change;
+
         if (newQty <= 0) {
-            state.cart.splice(index, 1);
-        } else if (newQty > item.product.stock) {
-            alert(state.currentLang === 'uz' ? `Ombordagi maksimal qoldiq: ${item.product.stock} ${unitStr}` : `Максимальный остаток на складе: ${item.product.stock} ${unitStr}`);
+            state.cart.splice(idx, 1);
         } else {
+            if (newQty > item.stock) {
+                alert(`На складе всего ${item.stock} ${item.unit}`);
+                return;
+            }
             item.qty = newQty;
         }
         renderPOSCart();
     };
 
+    function updateCashChange(total) {
+        const cashInput = document.getElementById('cashReceivedInput');
+        const changeDisplay = document.getElementById('changeDisplay');
+        if (!cashInput || !changeDisplay) return;
+
+        const received = Number(cashInput.value) || 0;
+        if (received <= 0 || total <= 0) {
+            changeDisplay.textContent = `Сдача: 0 ${state.settings.currency}`;
+            return;
+        }
+        const change = received - total;
+        if (change >= 0) {
+            changeDisplay.textContent = `Сдача: ${formatCurrency(change)}`;
+            changeDisplay.className = 'change-display text-accent';
+        } else {
+            changeDisplay.textContent = `Не хватает: ${formatCurrency(Math.abs(change))}`;
+            changeDisplay.className = 'change-display text-danger';
+        }
+    }
+
+    // CHECKOUT PROCESS
     function processCheckout() {
         if (state.cart.length === 0) return;
 
-        const discountPercent = Math.min(100, Math.max(0, Number(document.getElementById('cartDiscountInput').value) || 0));
-        const paymentTypeElem = document.querySelector('input[name="paymentType"]:checked');
-        const paymentType = paymentTypeElem ? paymentTypeElem.value : 'Cash';
+        const subtotal = state.cart.reduce((sum, it) => sum + (it.price * it.qty), 0);
+        const discInput = document.getElementById('cartDiscountInput');
+        const discPercent = discInput ? Math.min(100, Math.max(0, Number(discInput.value) || 0)) : 0;
+        const discountAmount = Math.round(subtotal * (discPercent / 100));
+        const finalTotal = Math.max(0, subtotal - discountAmount);
 
-        let totalAmount = 0;
-        let totalCost = 0;
+        const paymentRadio = document.querySelector('input[name="paymentType"]:checked');
+        const paymentType = paymentRadio ? paymentRadio.value : 'Cash';
 
-        const saleItems = state.cart.map(item => {
-            const p = item.product;
-            const pName = getProductName(p);
-            const itemTotal = p.salePrice * item.qty * (1 - discountPercent / 100);
-            const itemCost = p.costPrice * item.qty;
-
-            totalAmount += itemTotal;
-            totalCost += itemCost;
-
-            const realProd = state.products.find(prod => prod.id === p.id);
-            if (realProd) {
-                realProd.stock -= item.qty;
+        // Check if Debt payment
+        let debtorName = "";
+        let debtorPhone = "";
+        if (paymentType === 'Debt') {
+            const nameEl = document.getElementById('debtCustomerName');
+            const phoneEl = document.getElementById('debtCustomerPhone');
+            debtorName = (nameEl ? nameEl.value : '').trim();
+            debtorPhone = (phoneEl ? phoneEl.value : '').trim();
+            if (!debtorName) {
+                alert('Пожалуйста, укажите имя клиента для записи в книгу долгов!');
+                if (nameEl) nameEl.focus();
+                return;
             }
+        }
 
-            return {
-                id: p.id,
-                name: pName,
-                qty: item.qty,
-                costPrice: p.costPrice,
-                salePrice: p.salePrice,
-                total: itemTotal
-            };
+        // Deduct inventory
+        let totalCost = 0;
+        state.cart.forEach(cartItem => {
+            const prod = state.products.find(p => p.id === cartItem.id);
+            if (prod) {
+                prod.stock = Math.max(0, prod.stock - cartItem.qty);
+            }
+            totalCost += (cartItem.cost * cartItem.qty);
         });
 
-        const receiptNo = 'CHK-' + Math.floor(100000 + Math.random() * 900000);
-        const newSale = {
-            id: 'sale_' + Date.now(),
-            receiptNo: receiptNo,
+        const netProfit = finalTotal - totalCost;
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+        const saleRecord = {
+            id: Date.now().toString().slice(-6),
             timestamp: Date.now(),
-            items: saleItems,
-            totalAmount: totalAmount,
-            totalCost: totalCost,
-            profit: totalAmount - totalCost,
+            date: dateStr,
+            time: timeStr,
+            items: [...state.cart],
+            subtotal: subtotal,
+            discount: discountAmount,
+            discountPercent: discPercent,
+            total: finalTotal,
+            profit: netProfit,
             paymentType: paymentType,
-            discountPercent: discountPercent
+            customerName: debtorName,
+            customerPhone: debtorPhone
         };
 
-        state.sales.push(newSale);
+        state.sales.push(saleRecord);
+
+        // Record debt if applicable
+        if (paymentType === 'Debt') {
+            state.debts.push({
+                id: Date.now(),
+                saleId: saleRecord.id,
+                customerName: debtorName,
+                customerPhone: debtorPhone,
+                amount: finalTotal,
+                date: dateStr,
+                time: timeStr,
+                itemsSummary: state.cart.map(i => `${i.name} (x${i.qty})`).join(', '),
+                status: 'unpaid'
+            });
+            saveDebts();
+        }
+
         saveProducts();
         saveSales();
 
-        state.cart = [];
-        document.getElementById('cartDiscountInput').value = 0;
+        // Play sounds & trigger celebratory fireworks!
+        playCheckoutChime();
+        if (typeof confetti === 'function' && state.settings.confettiEnabled !== false) {
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
 
-        renderReceiptModal(newSale);
+        // Reset cart
+        state.cart = [];
+        if (discInput) discInput.value = 0;
+        const cashInput = document.getElementById('cashReceivedInput');
+        if (cashInput) cashInput.value = '';
+
         renderAll();
+        renderReceiptModal(saleRecord);
     }
 
-    function renderReceiptModal(sale) {
-        const paper = document.getElementById('receiptPaper');
-        const dateStr = new Date(sale.timestamp).toLocaleString('ru-RU');
-        const isUz = state.currentLang === 'uz';
+    // =========================================================================
+    // RECEIPT MODAL & PRINTING
+    // =========================================================================
+    let currentReceiptSale = null;
 
-        let itemsHtml = sale.items.map(i => `
-            <div class="receipt-row">
-                <span>${i.name} x${i.qty}</span>
-                <span>${formatCurrency(i.total)}</span>
-            </div>
-        `).join('');
+    function renderReceiptModal(sale) {
+        currentReceiptSale = sale;
+        const modal = document.getElementById('receiptModal');
+        const paper = document.getElementById('receiptPaper');
+        if (!modal || !paper) return;
+
+        const shopName = state.settings.shopName || "ShopMaster";
+        const currency = state.settings.currency || "so'm";
 
         paper.innerHTML = `
-            <div class="receipt-logo">${sale.paymentType === 'Card' ? 'HUMO / UZCARD' : 'CHECK'}</div>
-            <div class="receipt-sublogo">${state.settings.shopName.toUpperCase()}</div>
+            <div class="receipt-logo">${shopName.toUpperCase()}</div>
+            <div class="receipt-sublogo">УЧЕТ И КАССОВЫЙ ЧЕК</div>
             <div class="receipt-header-info">
-                <div>Do'kon / Магазин: ${state.settings.shopName}</div>
-                <div>Chek № ${sale.receiptNo}</div>
-                <div>Sana / Date: ${dateStr}</div>
-                <div>To'lov turi: ${getPaymentLabel(sale.paymentType)}</div>
+                Чек №: <strong>#${sale.id}</strong><br>
+                Дата: ${sale.date} ${sale.time}<br>
+                Оплата: <strong>${getPaymentLabel(sale.paymentType)}</strong>
+                ${sale.customerName ? `<br>Клиент: <strong>${sale.customerName}</strong> (${sale.customerPhone || ''})` : ''}
             </div>
-
-            <div class="receipt-status-banner">TASDIQLANDI</div>
-
             <div class="receipt-dashed"></div>
-            ${itemsHtml}
-            ${sale.discountPercent > 0 ? `<div class="receipt-row"><span>Chegirma:</span><span>${sale.discountPercent}%</span></div>` : ''}
+            ${sale.items.map(it => `
+                <div class="receipt-row">
+                    <span>${it.name} (x${it.qty})</span>
+                    <span>${(it.price * it.qty).toLocaleString()} ${currency}</span>
+                </div>
+            `).join('')}
             <div class="receipt-dashed"></div>
-
-            <div class="receipt-row receipt-total-large">
-                <span>MIQDOR (JAMI):</span>
-                <span>${formatCurrency(sale.totalAmount)}</span>
+            ${sale.discount > 0 ? `
+                <div class="receipt-row">
+                    <span>Скидка (${sale.discountPercent}%):</span>
+                    <span>-${sale.discount.toLocaleString()} ${currency}</span>
+                </div>
+            ` : ''}
+            <div class="receipt-status-banner">
+                ИТОГО: ${sale.total.toLocaleString()} ${currency}
             </div>
-
-            <div class="receipt-dashed"></div>
             <div class="receipt-footer-thanks">
-                <div>${isUz ? 'Xaridingiz uchun rahmat!' : 'Спасибо за покупку!'}</div>
-                <div style="font-size:10px; font-weight:normal; margin-top:4px;">*** ShopMaster POS System ***</div>
+                СПАСИБО ЗА ПОКУПКУ!<br>
+                ЖДЁМ ВАС СНОВА
             </div>
         `;
 
-        document.getElementById('receiptModal').classList.add('active');
+        modal.classList.add('active');
     }
 
+    // =========================================================================
+    // TAB 3: INVENTORY TABLE
+    // =========================================================================
     function renderInventoryTable() {
-        const tbody = document.getElementById('inventoryTbody');
-        const searchVal = (document.getElementById('inventorySearchInput').value || '').toLowerCase();
-        const catFilter = document.getElementById('inventoryCategoryFilter').value;
-        const stockFilter = document.getElementById('inventoryStockFilter').value;
-        const unitStr = i18n[state.currentLang].unit;
+        const tbody = document.getElementById('inventoryTableBody');
+        if (!tbody) return;
 
-        const rawCategories = Array.from(new Set(state.products.map(p => p.category || 'General')));
-        const catSelect = document.getElementById('inventoryCategoryFilter');
-        const currentCat = catSelect.value;
-        catSelect.innerHTML = `<option value="all">${i18n[state.currentLang].allCategories}</option>`;
-        rawCategories.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c;
-            opt.textContent = getCategoryName(c);
-            if (c === currentCat) opt.selected = true;
-            catSelect.appendChild(opt);
-        });
+        const query = (document.getElementById('invSearchInput')?.value || '').toLowerCase().trim();
+        const catFilter = document.getElementById('invCategoryFilter')?.value || 'all';
+        const stockFilter = document.getElementById('invStockFilter')?.value || 'all';
 
-        let filtered = state.products.filter(p => {
-            const pName = getProductName(p).toLowerCase();
-            const matchesSearch = pName.includes(searchVal) || (p.barcode && p.barcode.includes(searchVal));
+        // Populate Category Filter dropdown
+        const catSelect = document.getElementById('invCategoryFilter');
+        if (catSelect) {
+            const categories = Array.from(new Set(state.products.map(p => p.category || "Общее"))).filter(Boolean);
+            const cur = catSelect.value;
+            catSelect.innerHTML = `<option value="all">${i18n[state.currentLang].allCategories}</option>` +
+                categories.map(c => `<option value="${c}" ${cur === c ? 'selected' : ''}>${c}</option>`).join('');
+        }
+
+        const filtered = state.products.filter(p => {
+            const matchesQuery = !query ||
+                p.name.toLowerCase().includes(query) ||
+                (p.barcode && p.barcode.toLowerCase().includes(query)) ||
+                (p.category && p.category.toLowerCase().includes(query));
             const matchesCat = catFilter === 'all' || p.category === catFilter;
-
             let matchesStock = true;
-            if (stockFilter === 'in_stock') matchesStock = p.stock > 0;
-            if (stockFilter === 'low') matchesStock = p.stock > 0 && p.stock <= state.settings.lowStockThreshold;
+            if (stockFilter === 'in') matchesStock = p.stock > 5;
+            if (stockFilter === 'low') matchesStock = p.stock > 0 && p.stock <= 5;
             if (stockFilter === 'out') matchesStock = p.stock <= 0;
-
-            return matchesSearch && matchesCat && matchesStock;
+            return matchesQuery && matchesCat && matchesStock;
         });
 
-        tbody.innerHTML = '';
         if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">${state.currentLang === 'uz' ? 'Mahsulotlar topilmadi' : 'Товары не найдены'}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Товары не найдены</td></tr>`;
             return;
         }
 
-        filtered.forEach(p => {
-            const margin = p.salePrice > 0 ? (((p.salePrice - p.costPrice) / p.salePrice) * 100).toFixed(1) : 0;
-            const tr = document.createElement('tr');
-            const pName = getProductName(p);
-            const pCat = getCategoryName(p.category);
-
-            let stockBadgeClass = 'text-success';
-            let stockStatusText = i18n[state.currentLang].inStock;
+        tbody.innerHTML = filtered.map(p => {
+            const margin = p.cost > 0 ? Math.round(((p.price - p.cost) / p.cost) * 100) : 100;
+            let statusBadge = '<span class="status-badge badge-success">В наличии</span>';
             if (p.stock <= 0) {
-                stockBadgeClass = 'text-danger';
-                stockStatusText = i18n[state.currentLang].outOfStock;
-            } else if (p.stock <= state.settings.lowStockThreshold) {
-                stockBadgeClass = 'text-warning';
-                stockStatusText = i18n[state.currentLang].lowStock;
+                statusBadge = '<span class="status-badge badge-danger">Нет</span>';
+            } else if (p.stock <= (state.settings.lowStockThreshold || 5)) {
+                statusBadge = '<span class="status-badge badge-warning">Мало</span>';
             }
 
-            tr.innerHTML = `
-                <td>
-                    <div style="font-weight:700;">${pName}</div>
-                    <small class="text-muted">Art: ${p.barcode || '—'}</small>
-                </td>
-                <td><span class="chip" style="font-size:11px; padding:2px 8px;">${pCat || '—'}</span></td>
-                <td>${formatCurrency(p.costPrice)}</td>
-                <td><strong>${formatCurrency(p.salePrice)}</strong></td>
-                <td><span class="text-accent" style="font-weight:700;">+${margin}%</span></td>
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <strong>${p.stock} ${unitStr}</strong>
-                        <button class="btn btn-sm btn-ghost" onclick="quickAddStock('${p.id}', 10)" title="+10">+10</button>
-                    </div>
-                </td>
-                <td><span class="${stockBadgeClass}" style="font-weight:700;">${stockStatusText}</span></td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-ghost text-primary" onclick="editProduct('${p.id}')"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn btn-sm btn-ghost text-danger" onclick="deleteProduct('${p.id}')"><i class="fa-solid fa-trash"></i></button>
-                </td>
+            return `
+                <tr>
+                    <td><strong>${p.name}</strong></td>
+                    <td><span class="status-badge badge-primary">${p.category || '—'}</span></td>
+                    <td><code style="font-family:'Space Mono';font-size:11.5px;">${p.barcode || '—'}</code></td>
+                    <td>${formatCurrency(p.cost)}</td>
+                    <td><strong class="text-accent">${formatCurrency(p.price)}</strong></td>
+                    <td><span class="text-success">+${margin}%</span></td>
+                    <td><strong>${p.stock}</strong> ${p.unit}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="window.quickAddStock(${p.id}, 5)" title="+5 шт">+5</button>
+                            <button class="btn btn-sm btn-outline-info" onclick="window.printPriceTag(${p.id})" title="Ценник и штрихкод"><i class="fa-solid fa-barcode"></i></button>
+                            <button class="btn btn-sm btn-ghost" onclick="window.editProduct(${p.id})" title="Редактировать"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-sm btn-ghost text-danger" onclick="window.deleteProduct(${p.id})" title="Удалить"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
             `;
-            tbody.appendChild(tr);
-        });
+        }).join('');
     }
 
     window.quickAddStock = function (id, qty) {
@@ -971,6 +1179,7 @@
             prod.stock += qty;
             saveProducts();
             renderAll();
+            playScannerBeep();
         }
     };
 
@@ -979,62 +1188,62 @@
         if (!prod) return;
 
         document.getElementById('productId').value = prod.id;
-        document.getElementById('prodName').value = getProductName(prod);
-        document.getElementById('prodCategory').value = getCategoryName(prod.category) || '';
+        document.getElementById('prodName').value = prod.name;
+        document.getElementById('prodCategory').value = prod.category || '';
         document.getElementById('prodBarcode').value = prod.barcode || '';
-        document.getElementById('prodCostPrice').value = prod.costPrice;
-        document.getElementById('prodSalePrice').value = prod.salePrice;
+        document.getElementById('prodCost').value = prod.cost;
+        document.getElementById('prodPrice').value = prod.price;
         document.getElementById('prodStock').value = prod.stock;
+        document.getElementById('prodUnit').value = prod.unit || 'шт';
 
-        document.getElementById('productModalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> ' + i18n[state.currentLang].modalAddTitle;
+        document.getElementById('productModalTitle').innerHTML = `<i class="fa-solid fa-pen"></i> ${i18n[state.currentLang].modalEditTitle}`;
         document.getElementById('productModal').classList.add('active');
     };
 
     window.deleteProduct = function (id) {
-        if (confirm(state.currentLang === 'uz' ? 'Mahsulotni o\'chirmoqchimisiz?' : 'Удалить этот товар?')) {
-            state.products = state.products.filter(p => p.id !== id);
-            saveProducts();
-            renderAll();
-        }
+        if (!confirm('Удалить этот товар из базы?')) return;
+        state.products = state.products.filter(p => p.id !== id);
+        saveProducts();
+        renderAll();
     };
 
+    // =========================================================================
+    // TAB 4: SALES HISTORY
+    // =========================================================================
     function renderSalesHistory() {
-        const tbody = document.getElementById('salesHistoryTbody');
-        const searchVal = (document.getElementById('salesSearchInput').value || '').toLowerCase();
-        const unitStr = i18n[state.currentLang].unit;
+        const tbody = document.getElementById('salesTableBody');
+        if (!tbody) return;
 
-        let filtered = state.sales.filter(s => {
-            const matchesNo = s.receiptNo.toLowerCase().includes(searchVal);
-            const matchesItems = s.items.some(i => i.name.toLowerCase().includes(searchVal));
-            return matchesNo || matchesItems;
+        const query = (document.getElementById('salesSearchInput')?.value || '').toLowerCase().trim();
+
+        const filtered = [...state.sales].reverse().filter(s => {
+            if (!query) return true;
+            return s.id.includes(query) ||
+                s.items.some(i => i.name.toLowerCase().includes(query)) ||
+                (s.customerName && s.customerName.toLowerCase().includes(query));
         });
 
-        tbody.innerHTML = '';
         if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">${i18n[state.currentLang].noSalesYet}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">История продаж пуста</td></tr>`;
             return;
         }
 
-        [...filtered].reverse().forEach(sale => {
-            const tr = document.createElement('tr');
-            const dateStr = new Date(sale.timestamp).toLocaleString('ru-RU');
-            const itemsList = sale.items.map(i => `${i.name} (${i.qty} ${unitStr})`).join('<br>');
-
-            tr.innerHTML = `
-                <td><strong>#${sale.receiptNo}</strong></td>
-                <td><small>${dateStr}</small></td>
-                <td><small>${itemsList}</small></td>
-                <td><strong>${formatCurrency(sale.totalAmount)}</strong></td>
-                <td class="text-muted">${formatCurrency(sale.totalCost)}</td>
-                <td class="text-accent" style="font-weight:700;">+${formatCurrency(sale.profit)}</td>
-                <td>${getPaymentLabel(sale.paymentType)}</td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-ghost" onclick="viewReceipt('${sale.id}')"><i class="fa-solid fa-receipt"></i></button>
-                    <button class="btn btn-sm btn-ghost text-danger" onclick="refundSale('${sale.id}')"><i class="fa-solid fa-rotate-left"></i> ${state.currentLang === 'uz' ? 'Qaytarish' : 'Возврат'}</button>
+        tbody.innerHTML = filtered.map(s => `
+            <tr>
+                <td><strong>#${s.id}</strong></td>
+                <td><small class="text-muted">${s.date} ${s.time}</small></td>
+                <td>${s.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</td>
+                <td><strong class="text-accent">${formatCurrency(s.total)}</strong></td>
+                <td><span class="text-success">+${formatCurrency(s.profit || 0)}</span></td>
+                <td><span class="status-badge badge-primary">${getPaymentLabel(s.paymentType)}</span></td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-info" onclick="window.viewReceipt('${s.id}')"><i class="fa-solid fa-receipt"></i> Чек</button>
+                        <button class="btn btn-sm btn-ghost text-danger" onclick="window.refundSale('${s.id}')" title="Возврат"><i class="fa-solid fa-rotate-left"></i></button>
+                    </div>
                 </td>
-            `;
-            tbody.appendChild(tr);
-        });
+            </tr>
+        `).join('');
     }
 
     window.viewReceipt = function (saleId) {
@@ -1043,328 +1252,857 @@
     };
 
     window.refundSale = function (saleId) {
-        const sale = state.sales.find(s => s.id === saleId);
-        if (!sale) return;
+        if (!confirm(`${i18n[state.currentLang].confirmRefund}${saleId}?`)) return;
+        const idx = state.sales.findIndex(s => s.id === saleId);
+        if (idx === -1) return;
 
-        if (confirm(state.currentLang === 'uz' ? `Qaytarishni tasdiqlaysizmi #${sale.receiptNo}?` : `Подтверждаете возврат чека #${sale.receiptNo}?`)) {
-            sale.items.forEach(item => {
-                const prod = state.products.find(p => p.id === item.id);
-                if (prod) prod.stock += item.qty;
-            });
+        const sale = state.sales[idx];
+        sale.items.forEach(it => {
+            const prod = state.products.find(p => p.id === it.id);
+            if (prod) prod.stock += it.qty;
+        });
 
-            state.sales = state.sales.filter(s => s.id !== saleId);
-            saveProducts();
-            saveSales();
-            renderAll();
-        }
+        state.sales.splice(idx, 1);
+        saveProducts();
+        saveSales();
+        renderAll();
+        alert(i18n[state.currentLang].saleRefunded);
     };
 
+    // =========================================================================
+    // TAB 5: FINANCIAL ANALYTICS (Charts & KPIs)
+    // =========================================================================
     function renderAnalytics() {
-        let rev = 0;
-        let cost = 0;
-        const unitStr = i18n[state.currentLang].unit;
+        let totalRev = 0;
+        let totalProfit = 0;
+        let totalCost = 0;
+        let totalSalesCount = state.sales.length;
+        let potentialRev = 0;
+        let warehouseCost = 0;
 
         state.sales.forEach(s => {
-            rev += s.totalAmount;
-            cost += s.totalCost;
+            totalRev += s.total;
+            totalProfit += s.profit || 0;
+            totalCost += (s.subtotal - (s.profit || 0));
         });
 
-        const netProfit = rev - cost;
-        const avgMargin = rev > 0 ? ((netProfit / rev) * 100).toFixed(1) : 0;
+        state.products.forEach(p => {
+            warehouseCost += p.cost * p.stock;
+            potentialRev += p.price * p.stock;
+        });
 
-        document.getElementById('analyticsRevenue').textContent = formatCurrency(rev);
-        document.getElementById('analyticsCost').textContent = formatCurrency(cost);
-        document.getElementById('analyticsNetProfit').textContent = formatCurrency(netProfit);
-        document.getElementById('analyticsMarginPercent').textContent = avgMargin + '%';
+        const marginRoi = totalRev > 0 ? Math.round((totalProfit / totalRev) * 100) : 0;
+        const avgCheck = totalSalesCount > 0 ? Math.round(totalRev / totalSalesCount) : 0;
 
-        const tbody = document.getElementById('analyticsProductsTbody');
-        tbody.innerHTML = '';
+        const elMargin = document.getElementById('analyticsMarginPercent');
+        if (elMargin) elMargin.textContent = `${marginRoi}%`;
 
-        const map = {};
-        state.sales.forEach(s => {
-            s.items.forEach(i => {
-                if (!map[i.id]) {
-                    map[i.id] = { name: i.name, qty: 0, revenue: 0, cost: 0 };
+        const elAvg = document.getElementById('analyticsAvgCheck');
+        if (elAvg) elAvg.textContent = formatCurrency(avgCheck);
+
+        const elCost = document.getElementById('analyticsInventoryCost');
+        if (elCost) elCost.textContent = formatCurrency(warehouseCost);
+
+        const elPot = document.getElementById('analyticsPotentialRevenue');
+        if (elPot) elPot.textContent = formatCurrency(potentialRev);
+
+        renderAnalyticsCharts();
+        renderAnalyticsCategoryTable();
+    }
+
+    function renderAnalyticsCharts() {
+        if (typeof Chart === 'undefined') return;
+
+        // 1. Dynamic Bar/Line Chart
+        const ctxRev = document.getElementById('analyticsRevenueChart');
+        if (ctxRev) {
+            const days = [];
+            const revs = [];
+            const profs = [];
+            for (let i = 13; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const ds = d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+                days.push(ds);
+                let r = 0, p = 0;
+                state.sales.forEach(s => {
+                    if (s.date === ds) { r += s.total; p += s.profit || 0; }
+                });
+                revs.push(r);
+                profs.push(p);
+            }
+
+            if (analyticsRevenueChartInstance) analyticsRevenueChartInstance.destroy();
+
+            analyticsRevenueChartInstance = new Chart(ctxRev, {
+                type: 'bar',
+                data: {
+                    labels: days,
+                    datasets: [
+                        { label: 'Выручка', data: revs, backgroundColor: 'rgba(59, 130, 246, 0.75)', borderRadius: 6 },
+                        { label: 'Прибыль', data: profs, backgroundColor: 'rgba(16, 185, 129, 0.75)', borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94A3B8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94A3B8' } }
+                    }
                 }
-                map[i.id].qty += i.qty;
-                map[i.id].revenue += i.total;
-                map[i.id].cost += (i.costPrice * i.qty);
+            });
+        }
+
+        // 2. Category Doughnut Chart
+        const ctxCat = document.getElementById('analyticsCategoryChart');
+        if (ctxCat) {
+            const catMap = {};
+            state.sales.forEach(s => {
+                s.items.forEach(it => {
+                    const prod = state.products.find(p => p.id === it.id);
+                    const cat = (prod ? prod.category : 'Общее') || 'Общее';
+                    catMap[cat] = (catMap[cat] || 0) + (it.price * it.qty);
+                });
+            });
+
+            const labels = Object.keys(catMap);
+            const data = Object.values(catMap);
+
+            if (analyticsCategoryChartInstance) analyticsCategoryChartInstance.destroy();
+
+            if (labels.length > 0) {
+                analyticsCategoryChartInstance = new Chart(ctxCat, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4', '#EC4899']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: '#94A3B8' } } }
+                    }
+                });
+            }
+        }
+    }
+
+    function renderAnalyticsCategoryTable() {
+        const tbody = document.getElementById('analyticsCategoryTableBody');
+        if (!tbody) return;
+
+        const catData = {};
+        let totalRev = 0;
+
+        state.sales.forEach(s => {
+            s.items.forEach(it => {
+                const prod = state.products.find(p => p.id === it.id);
+                const cat = (prod ? prod.category : 'Общее') || 'Общее';
+                if (!catData[cat]) catData[cat] = { name: cat, qty: 0, rev: 0, profit: 0 };
+                const itemRev = it.price * it.qty;
+                const itemProfit = itemRev - (it.cost * it.qty);
+                catData[cat].qty += it.qty;
+                catData[cat].rev += itemRev;
+                catData[cat].profit += itemProfit;
+                totalRev += itemRev;
             });
         });
 
-        const list = Object.values(map);
+        const list = Object.values(catData).sort((a, b) => b.rev - a.rev);
         if (list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">${i18n[state.currentLang].noSalesData}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">Нет данных для отчета</td></tr>`;
             return;
         }
 
-        list.sort((a, b) => (b.revenue - b.cost) - (a.revenue - a.cost));
-
-        list.forEach(item => {
-            const profit = item.revenue - item.cost;
-            const sharePercent = netProfit > 0 ? ((profit / netProfit) * 100).toFixed(1) : 0;
-            const tr = document.createElement('tr');
-
-            tr.innerHTML = `
-                <td><strong>${item.name}</strong></td>
-                <td>${item.qty} ${unitStr}</td>
-                <td>${formatCurrency(item.revenue)}</td>
-                <td class="text-muted">${formatCurrency(item.cost)}</td>
-                <td class="text-accent" style="font-weight:700;">+${formatCurrency(profit)}</td>
-                <td>${sharePercent}%</td>
+        tbody.innerHTML = list.map(c => {
+            const share = totalRev > 0 ? Math.round((c.rev / totalRev) * 100) : 0;
+            return `
+                <tr>
+                    <td><strong>${c.name}</strong></td>
+                    <td>${c.qty} ${i18n[state.currentLang].unit}</td>
+                    <td><strong>${formatCurrency(c.rev)}</strong></td>
+                    <td><span class="text-success">+${formatCurrency(c.profit)}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="flex-grow:1;height:6px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+                                <div style="width:${share}%;height:100%;background:var(--primary);"></div>
+                            </div>
+                            <small>${share}%</small>
+                        </div>
+                    </td>
+                </tr>
             `;
-            tbody.appendChild(tr);
+        }).join('');
+    }
+
+    // =========================================================================
+    // TAB 6: CUSTOMER DEBT LEDGER (QARZ DAFTARI / ДОЛГИ)
+    // =========================================================================
+    function renderDebtsTable() {
+        const tbody = document.getElementById('debtsTableBody');
+        const badge = document.getElementById('debtsBadge');
+        const totalEl = document.getElementById('totalDebtsAmount');
+        const countEl = document.getElementById('totalDebtorsCount');
+
+        const unpaidDebts = state.debts.filter(d => d.status === 'unpaid');
+        const totalDebtSum = unpaidDebts.reduce((sum, d) => sum + d.amount, 0);
+
+        if (badge) {
+            badge.textContent = unpaidDebts.length;
+            badge.style.display = unpaidDebts.length > 0 ? 'inline-block' : 'none';
+        }
+        if (totalEl) totalEl.textContent = formatCurrency(totalDebtSum);
+        if (countEl) countEl.textContent = `${unpaidDebts.length} должников`;
+
+        if (!tbody) return;
+
+        if (unpaidDebts.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Нет активных долгов. Все чеки оплачены! 🎉</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = unpaidDebts.map(d => `
+            <tr>
+                <td><strong>${d.customerName}</strong></td>
+                <td><a href="tel:${d.customerPhone}" style="color:var(--primary);text-decoration:none;">${d.customerPhone || '—'}</a></td>
+                <td><small class="text-muted">${d.date} ${d.time}</small></td>
+                <td><small>${d.itemsSummary}</small></td>
+                <td><strong class="text-danger">${formatCurrency(d.amount)}</strong></td>
+                <td><span class="status-badge badge-warning">Не оплачен</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-success" onclick="window.payOffDebt(${d.id})">
+                        <i class="fa-solid fa-check"></i> Погасить долг
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    window.payOffDebt = function (debtId) {
+        const debt = state.debts.find(d => d.id === debtId);
+        if (!debt) return;
+        if (!confirm(`Подтверждаете погашение долга клиентом ${debt.customerName} на сумму ${formatCurrency(debt.amount)}?`)) return;
+
+        debt.status = 'paid';
+        debt.paidDate = new Date().toLocaleDateString('ru-RU');
+
+        saveDebts();
+        playCheckoutChime();
+        renderDebtsTable();
+        alert(`Долг клиента ${debt.customerName} успешно погашен!`);
+    };
+
+    // =========================================================================
+    // FEATURE: REAL EXCEL (.XLSX) EXPORT (SheetJS)
+    // =========================================================================
+    function exportInventoryExcel() {
+        if (typeof XLSX === 'undefined') {
+            alert('Библиотека Excel еще загружается, попробуйте через пару секунд.');
+            return;
+        }
+
+        const data = state.products.map(p => {
+            const margin = p.cost > 0 ? Math.round(((p.price - p.cost) / p.cost) * 100) : 0;
+            return {
+                "ID": p.id,
+                "Наименование товара": p.name,
+                "Категория": p.category || "Общее",
+                "Штрихкод": p.barcode || "",
+                "Цена закупки": p.cost,
+                "Цена продажи": p.price,
+                "Маржа (%)": margin,
+                "Остаток": p.stock,
+                "Единица": p.unit || "шт",
+                "Статус": p.stock <= 0 ? "Нет в наличии" : (p.stock <= 5 ? "Мало" : "В наличии")
+            };
+        });
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Склад");
+
+        const today = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `ShopMaster_Sklad_${today}.xlsx`);
+    }
+
+    function exportSalesExcel() {
+        if (typeof XLSX === 'undefined') {
+            alert('Библиотека Excel еще загружается.');
+            return;
+        }
+
+        const data = state.sales.map(s => ({
+            "№ Чека": s.id,
+            "Дата": s.date,
+            "Время": s.time,
+            "Товары": s.items.map(i => `${i.name} (x${i.qty})`).join('; '),
+            "Позиций": s.items.length,
+            "Сумма продажи": s.total,
+            "Чистая прибыль": s.profit || 0,
+            "Способ оплаты": getPaymentLabel(s.paymentType),
+            "Клиент (Долг)": s.customerName || ""
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Продажи");
+
+        const today = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `ShopMaster_Sales_${today}.xlsx`);
+    }
+
+    // =========================================================================
+    // FEATURE: PRINTABLE BARCODE & PRICE TAG GENERATOR (JsBarcode)
+    // =========================================================================
+    window.printPriceTag = function (id) {
+        const prod = state.products.find(p => p.id === id);
+        if (!prod) return;
+
+        const modal = document.getElementById('priceTagModal');
+        const shopNameEl = document.getElementById('tagShopName');
+        const prodNameEl = document.getElementById('tagProductName');
+        const priceEl = document.getElementById('tagProductPrice');
+        const codeNumEl = document.getElementById('tagBarcodeNumber');
+        const barcodeSvg = document.getElementById('tagBarcodeSvg');
+
+        if (!modal) return;
+
+        const barcode = prod.barcode || `2000${String(prod.id).padStart(8, '0')}`;
+
+        if (shopNameEl) shopNameEl.textContent = state.settings.shopName || "ShopMaster";
+        if (prodNameEl) prodNameEl.textContent = prod.name;
+        if (priceEl) priceEl.textContent = formatCurrency(prod.price);
+        if (codeNumEl) codeNumEl.textContent = barcode;
+
+        if (typeof JsBarcode === 'function' && barcodeSvg) {
+            try {
+                JsBarcode(barcodeSvg, barcode, {
+                    format: "CODE128",
+                    lineColor: "#000000",
+                    width: 2,
+                    height: 50,
+                    displayValue: false
+                });
+            } catch (e) {
+                console.warn("Barcode rendering fallback", e);
+            }
+        }
+
+        modal.classList.add('active');
+    };
+
+    // =========================================================================
+    // FEATURE: LIVE CAMERA BARCODE SCANNER (html5-qrcode)
+    // =========================================================================
+    let scannerActionTarget = 'pos'; // 'pos' or 'inventory'
+
+    function openCameraScanner(target) {
+        scannerActionTarget = target || 'pos';
+        const modal = document.getElementById('cameraScannerModal');
+        if (!modal) return;
+        modal.classList.add('active');
+
+        if (typeof Html5Qrcode === 'undefined') {
+            document.getElementById('scannerStatusText').textContent = 'Модуль камеры загружается...';
+            return;
+        }
+
+        if (!html5QrScannerInstance) {
+            html5QrScannerInstance = new Html5Qrcode("scannerReader");
+        }
+
+        const config = { fps: 15, qrbox: { width: 250, height: 180 } };
+
+        html5QrScannerInstance.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+                onBarcodeScannedSuccess(decodedText);
+            },
+            (errorMessage) => {
+                // scanning frame error — ignore
+            }
+        ).catch(err => {
+            document.getElementById('scannerStatusText').textContent = 'Камера недоступна или доступ запрещен. Введите код вручную:';
         });
     }
 
-    function bindEvents() {
-        document.getElementById('langSelect').onchange = (e) => {
-            applyLanguage(e.target.value);
-            renderAll();
-        };
+    function stopCameraScanner() {
+        if (html5QrScannerInstance) {
+            html5QrScannerInstance.stop().then(() => {
+                html5QrScannerInstance.clear();
+            }).catch(e => console.warn(e));
+        }
+        const modal = document.getElementById('cameraScannerModal');
+        if (modal) modal.classList.remove('active');
+    }
 
-        document.querySelectorAll('.nav-btn, [data-tab-link]').forEach(btn => {
-            btn.onclick = () => {
-                const targetTab = btn.dataset.tab || btn.dataset.tabLink;
-                if (!targetTab) return;
+    function onBarcodeScannedSuccess(code) {
+        playScannerBeep();
+        stopCameraScanner();
 
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                const mainNavBtn = document.querySelector(`.nav-btn[data-tab="${targetTab}"]`);
-                if (mainNavBtn) mainNavBtn.classList.add('active');
+        const cleanCode = code.trim();
 
-                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-                const targetElem = document.getElementById(`tab-${targetTab}`);
-                if (targetElem) targetElem.classList.add('active');
-
-                const pageTitle = document.getElementById('pageTitle');
-                const pageSub = document.getElementById('pageSubTitle');
-
-                const dict = i18n[state.currentLang];
-                if (targetTab === 'dashboard') {
-                    pageTitle.textContent = dict.titleDashboard;
-                    pageSub.textContent = dict.subTitleDashboard;
-                } else if (targetTab === 'pos') {
-                    pageTitle.textContent = dict.navPos;
-                    pageSub.textContent = dict.phSearchPos;
-                } else if (targetTab === 'inventory') {
-                    pageTitle.textContent = dict.navInventory;
-                    pageSub.textContent = dict.phSearchInv;
-                } else if (targetTab === 'sales') {
-                    pageTitle.textContent = dict.navSales;
-                    pageSub.textContent = dict.phSearchSales;
-                } else if (targetTab === 'analytics') {
-                    pageTitle.textContent = dict.navAnalytics;
-                    pageSub.textContent = dict.analyticsTableTitle;
-                } else if (targetTab === 'settings') {
-                    pageTitle.textContent = dict.navSettings;
-                    pageSub.textContent = dict.settingsBasicTitle;
+        if (scannerActionTarget === 'inventory') {
+            const invSearch = document.getElementById('invSearchInput');
+            if (invSearch) {
+                invSearch.value = cleanCode;
+                switchTab('inventory');
+                renderInventoryTable();
+            }
+        } else {
+            // POS Target: find product and add to cart
+            const prod = state.products.find(p => p.barcode && p.barcode.trim() === cleanCode);
+            if (prod) {
+                switchTab('pos');
+                addToCart(prod);
+            } else {
+                if (confirm(`Товар со штрихкодом "${cleanCode}" не найден в базе. Хотите создать его прямо сейчас?`)) {
+                    switchTab('inventory');
+                    openAddProductModalWithBarcode(cleanCode);
                 }
-            };
-        });
-
-        document.getElementById('themeToggleBtn').onclick = () => {
-            state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
-            saveSettings();
-            applyTheme(state.settings.theme);
-        };
-
-        document.getElementById('quickAddProductBtn').onclick = openAddProductModal;
-        document.getElementById('addProductModalBtn').onclick = openAddProductModal;
-        document.getElementById('quickNewSaleBtn').onclick = () => {
-            document.querySelector('.nav-btn[data-tab="pos"]').click();
-        };
-
-        document.getElementById('closeProductModalBtn').onclick = closeProductModal;
-        document.getElementById('cancelProductModalBtn').onclick = closeProductModal;
-        document.getElementById('genBarcodeBtn').onclick = () => {
-            document.getElementById('prodBarcode').value = '460' + Math.floor(100000000 + Math.random() * 900000000);
-        };
-
-        document.getElementById('productForm').onsubmit = (e) => {
-            e.preventDefault();
-            saveProductFromModal();
-        };
-
-        document.getElementById('clearCartBtn').onclick = () => {
-            state.cart = [];
-            renderPOSCart();
-        };
-
-        document.getElementById('posSearchInput').oninput = renderPOSCatalog;
-        document.getElementById('inventorySearchInput').oninput = renderInventoryTable;
-        document.getElementById('inventoryCategoryFilter').onchange = renderInventoryTable;
-        document.getElementById('inventoryStockFilter').onchange = renderInventoryTable;
-        document.getElementById('salesSearchInput').oninput = renderSalesHistory;
-
-        document.getElementById('cartDiscountInput').oninput = renderPOSCart;
-        document.getElementById('checkoutBtn').onclick = processCheckout;
-
-        document.querySelectorAll('.pay-option input').forEach(radio => {
-            radio.onchange = () => {
-                document.querySelectorAll('.pay-option').forEach(po => po.classList.remove('active'));
-                radio.closest('.pay-option').classList.add('active');
-            };
-        });
-
-        document.getElementById('closeReceiptModalBtn').onclick = () => {
-            document.getElementById('receiptModal').classList.remove('active');
-        };
-        document.getElementById('printReceiptBtn').onclick = () => {
-            window.print();
-        };
-
-        document.getElementById('settingsForm').onsubmit = (e) => {
-            e.preventDefault();
-            state.settings.shopName = document.getElementById('settingShopName').value.trim() || 'Мой Магазин';
-            state.settings.currency = document.getElementById('settingCurrency').value.trim() || 'so\'m';
-            state.settings.lowStockThreshold = Number(document.getElementById('settingLowStockThreshold').value) || 5;
-
-            saveSettings();
-            renderAll();
-            alert(state.currentLang === 'uz' ? 'Sozlamalar saqlandi!' : 'Настройки сохранены!');
-        };
-
-        document.getElementById('exportBackupBtn').onclick = exportBackupJSON;
-        document.getElementById('importBackupInput').onchange = importBackupJSON;
-        document.getElementById('loadDemoDataBtn').onclick = () => {
-            if (confirm(state.currentLang === 'uz' ? 'Demo mahsulotlarni yuklashni tasdiqlaysizmi?' : 'Загрузить демо-товары?')) {
-                state.products = [...INITIAL_DEMO_PRODUCTS];
-                saveProducts();
-                renderAll();
             }
-        };
-
-        document.getElementById('resetAllDataBtn').onclick = () => {
-            if (confirm(state.currentLang === 'uz' ? 'Barcha ma\'lumotlarni tozalashni tasdiqlaysizmi?' : 'Очистить всю базу?')) {
-                state.products = [];
-                state.sales = [];
-                state.cart = [];
-                saveProducts();
-                saveSales();
-                renderAll();
-            }
-        };
-
-        document.getElementById('clearSalesHistoryBtn').onclick = () => {
-            if (confirm(state.currentLang === 'uz' ? 'Sotuvlar tarixini tozalashni tasdiqlaysizmi?' : 'Очистить историю продаж?')) {
-                state.sales = [];
-                saveSales();
-                renderAll();
-            }
-        };
-
-        document.getElementById('viewLowStockBtn').onclick = () => {
-            document.querySelector('.nav-btn[data-tab="inventory"]').click();
-            document.getElementById('inventoryStockFilter').value = 'low';
-            renderInventoryTable();
-        };
+        }
     }
 
-    function openAddProductModal() {
-        document.getElementById('productId').value = '';
+    function openAddProductModalWithBarcode(barcode) {
         document.getElementById('productForm').reset();
-        document.getElementById('prodStock').value = 10;
-        document.getElementById('productModalTitle').innerHTML = '<i class="fa-solid fa-box"></i> ' + i18n[state.currentLang].modalAddTitle;
+        document.getElementById('productId').value = '';
+        document.getElementById('prodBarcode').value = barcode;
+        document.getElementById('productModalTitle').innerHTML = `<i class="fa-solid fa-box"></i> ${i18n[state.currentLang].modalAddTitle}`;
         document.getElementById('productModal').classList.add('active');
     }
 
-    function closeProductModal() {
-        document.getElementById('productModal').classList.remove('active');
-    }
-
-    function saveProductFromModal() {
-        const id = document.getElementById('productId').value;
-        const name = document.getElementById('prodName').value.trim();
-        const category = document.getElementById('prodCategory').value.trim() || 'General';
-        const barcode = document.getElementById('prodBarcode').value.trim();
-        const costPrice = Number(document.getElementById('prodCostPrice').value) || 0;
-        const salePrice = Number(document.getElementById('prodSalePrice').value) || 0;
-        const stock = Number(document.getElementById('prodStock').value) || 0;
-
-        if (id) {
-            const prod = state.products.find(p => p.id === id);
-            if (prod) {
-                prod.name_ru = name;
-                prod.name_uz = name;
-                prod.category = category;
-                prod.barcode = barcode;
-                prod.costPrice = costPrice;
-                prod.salePrice = salePrice;
-                prod.stock = stock;
+    // =========================================================================
+    // GLOBAL EVENT LISTENERS & DELEGATION
+    // =========================================================================
+    function bindGlobalEvents() {
+        // Delegated Tab Switching for Desktop & Mobile buttons
+        document.addEventListener('click', (e) => {
+            const navBtn = e.target.closest('[data-tab], [data-tab-link]');
+            if (navBtn) {
+                const targetTab = navBtn.getAttribute('data-tab') || navBtn.getAttribute('data-tab-link');
+                if (targetTab) {
+                    e.preventDefault();
+                    switchTab(targetTab);
+                }
             }
-        } else {
-            const newProd = {
-                id: 'prod_' + Date.now(),
-                name_ru: name,
-                name_uz: name,
-                category: category,
-                barcode: barcode || '460' + Math.floor(100000000 + Math.random() * 900000000),
-                costPrice: costPrice,
-                salePrice: salePrice,
-                stock: stock,
-                createdAt: Date.now()
-            };
-            state.products.push(newProd);
+
+            // POS Product Click -> Add to Cart
+            const prodCard = e.target.closest('.product-pos-card[data-product-id]');
+            if (prodCard) {
+                const id = Number(prodCard.getAttribute('data-product-id'));
+                const prod = state.products.find(p => p.id === id);
+                if (prod) addToCart(prod);
+            }
+
+            // Category Chips Click
+            const chip = e.target.closest('.chip[data-cat]');
+            if (chip) {
+                currentPOSCategory = chip.getAttribute('data-cat');
+                document.querySelectorAll('#posCategoryChips .chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                renderPOSCatalog();
+            }
+
+            // Quick Discount Buttons
+            const discBtn = e.target.closest('.quick-disc-btn[data-disc]');
+            if (discBtn) {
+                const discVal = Number(discBtn.getAttribute('data-disc')) || 0;
+                const discInput = document.getElementById('cartDiscountInput');
+                if (discInput) {
+                    discInput.value = discVal;
+                    renderPOSCart();
+                }
+            }
+
+            // Quick Cash Bill Buttons
+            const billBtn = e.target.closest('.quick-bill-btn[data-bill]');
+            if (billBtn) {
+                const billVal = Number(billBtn.getAttribute('data-bill')) || 0;
+                const cashInput = document.getElementById('cashReceivedInput');
+                if (cashInput) {
+                    cashInput.value = (Number(cashInput.value) || 0) + billVal;
+                    const subtotal = state.cart.reduce((sum, it) => sum + (it.price * it.qty), 0);
+                    const disc = Number(document.getElementById('cartDiscountInput')?.value) || 0;
+                    const finalTotal = Math.max(0, subtotal - Math.round(subtotal * (disc / 100)));
+                    updateCashChange(finalTotal);
+                }
+            }
+        });
+
+        // Theme Toggle Buttons
+        const themeBtn = document.getElementById('themeToggleBtn');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', () => {
+                const newT = state.settings.theme === 'dark' ? 'light' : 'dark';
+                state.settings.theme = newT;
+                saveSettings();
+                applyTheme(newT);
+            });
+        }
+        const mThemeBtn = document.getElementById('themeToggleMobile');
+        if (mThemeBtn) {
+            mThemeBtn.addEventListener('click', () => {
+                const newT = state.settings.theme === 'dark' ? 'light' : 'dark';
+                state.settings.theme = newT;
+                saveSettings();
+                applyTheme(newT);
+            });
         }
 
-        saveProducts();
-        closeProductModal();
-        renderAll();
+        // Sound Toggle Buttons
+        const soundBtn = document.getElementById('soundToggleBtn');
+        const mSoundBtn = document.getElementById('mobileSoundToggle');
+        const updateSoundIcons = () => {
+            const iconClass = state.settings.soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+            const sI = document.getElementById('soundIcon');
+            const mI = document.getElementById('mobileSoundIcon');
+            if (sI) sI.className = iconClass;
+            if (mI) mI.className = iconClass;
+        };
+        const toggleSound = () => {
+            state.settings.soundEnabled = !state.settings.soundEnabled;
+            saveSettings();
+            updateSoundIcons();
+            const setS = document.getElementById('settingSoundToggle');
+            if (setS) setS.checked = state.settings.soundEnabled;
+            if (state.settings.soundEnabled) playScannerBeep();
+        };
+        if (soundBtn) soundBtn.addEventListener('click', toggleSound);
+        if (mSoundBtn) mSoundBtn.addEventListener('click', toggleSound);
+
+        // Language Selectors
+        const langSelect = document.getElementById('langSelect');
+        if (langSelect) langSelect.addEventListener('change', (e) => { applyLanguage(e.target.value); renderAll(); });
+        const mSelect = document.getElementById('langSelectMobile');
+        if (mSelect) mSelect.addEventListener('change', (e) => { applyLanguage(e.target.value); renderAll(); });
+
+        // Camera Scanner Openers
+        const headerScanBtn = document.getElementById('openScannerBtn');
+        if (headerScanBtn) headerScanBtn.addEventListener('click', () => openCameraScanner('pos'));
+        const posScanBtn = document.getElementById('posScanBtn');
+        if (posScanBtn) posScanBtn.addEventListener('click', () => openCameraScanner('pos'));
+        const mScanCamera = document.getElementById('mobileScanCameraBtn');
+        if (mScanCamera) mScanCamera.addEventListener('click', () => openCameraScanner('pos'));
+        const mScanAction = document.getElementById('mobileScanBtn');
+        if (mScanAction) mScanAction.addEventListener('click', () => openCameraScanner('pos'));
+
+        // Camera Scanner Closer
+        const closeScanBtn = document.getElementById('closeScannerModalBtn');
+        if (closeScanBtn) closeScanBtn.addEventListener('click', stopCameraScanner);
+        const closeScanFoot = document.getElementById('closeScannerFooterBtn');
+        if (closeScanFoot) closeScanFoot.addEventListener('click', stopCameraScanner);
+
+        // Manual Barcode Input
+        const manualInput = document.getElementById('manualScannerInput');
+        const manualSubmit = document.getElementById('manualScannerSubmitBtn');
+        const handleManual = () => {
+            if (manualInput && manualInput.value.trim()) {
+                onBarcodeScannedSuccess(manualInput.value.trim());
+                manualInput.value = '';
+            }
+        };
+        if (manualSubmit) manualSubmit.addEventListener('click', handleManual);
+        if (manualInput) manualInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleManual(); });
+
+        // Search inputs
+        const posSearch = document.getElementById('posSearchInput');
+        if (posSearch) posSearch.addEventListener('input', renderPOSCatalog);
+        const invSearch = document.getElementById('invSearchInput');
+        if (invSearch) invSearch.addEventListener('input', renderInventoryTable);
+        const salesSearch = document.getElementById('salesSearchInput');
+        if (salesSearch) salesSearch.addEventListener('input', renderSalesHistory);
+
+        // Filter selects
+        const invCat = document.getElementById('invCategoryFilter');
+        if (invCat) invCat.addEventListener('change', renderInventoryTable);
+        const invStock = document.getElementById('invStockFilter');
+        if (invStock) invStock.addEventListener('change', renderInventoryTable);
+
+        // Cart Actions
+        const clearCartBtn = document.getElementById('clearCartBtn');
+        if (clearCartBtn) clearCartBtn.addEventListener('click', () => { state.cart = []; renderPOSCart(); });
+        const discInput = document.getElementById('cartDiscountInput');
+        if (discInput) discInput.addEventListener('input', renderPOSCart);
+        const cashInput = document.getElementById('cashReceivedInput');
+        if (cashInput) cashInput.addEventListener('input', () => {
+            const subtotal = state.cart.reduce((sum, it) => sum + (it.price * it.qty), 0);
+            const disc = Number(discInput?.value) || 0;
+            const finalTotal = Math.max(0, subtotal - Math.round(subtotal * (disc / 100)));
+            updateCashChange(finalTotal);
+        });
+
+        // Payment type radio buttons
+        document.querySelectorAll('input[name="paymentType"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.querySelectorAll('.pay-option').forEach(l => l.classList.remove('active'));
+                const parent = e.target.closest('.pay-option');
+                if (parent) parent.classList.add('active');
+
+                // Toggle debt customer box
+                const debtBox = document.getElementById('debtCustomerBox');
+                if (debtBox) {
+                    debtBox.style.display = e.target.value === 'Debt' ? 'block' : 'none';
+                }
+            });
+        });
+
+        // Checkout Button
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        if (checkoutBtn) checkoutBtn.addEventListener('click', processCheckout);
+
+        // Excel Export Buttons
+        const expInvExcel = document.getElementById('exportInventoryExcelBtn');
+        if (expInvExcel) expInvExcel.addEventListener('click', exportInventoryExcel);
+        const expSalesExcel = document.getElementById('exportSalesExcelBtn');
+        if (expSalesExcel) expSalesExcel.addEventListener('click', exportSalesExcel);
+
+        // Clear Sales History
+        const clearSalesBtn = document.getElementById('clearSalesHistoryBtn');
+        if (clearSalesBtn) {
+            clearSalesBtn.addEventListener('click', () => {
+                if (confirm('Очистить всю историю продаж?')) {
+                    state.sales = [];
+                    saveSales();
+                    renderAll();
+                }
+            });
+        }
+
+        // Receipt Modal Buttons
+        const closeReceiptBtn = document.getElementById('closeReceiptModalBtn');
+        if (closeReceiptBtn) {
+            closeReceiptBtn.addEventListener('click', () => {
+                document.getElementById('receiptModal').classList.remove('active');
+            });
+        }
+        const printReceiptBtn = document.getElementById('printReceiptBtn');
+        if (printReceiptBtn) {
+            printReceiptBtn.addEventListener('click', () => {
+                window.print();
+            });
+        }
+
+        // Telegram & WhatsApp share
+        const tgBtn = document.getElementById('shareTelegramBtn');
+        if (tgBtn) {
+            tgBtn.addEventListener('click', () => {
+                if (!currentReceiptSale) return;
+                const text = encodeURIComponent(
+                    `🧾 ЧЕК #${currentReceiptSale.id} — ${state.settings.shopName}\n` +
+                    `Сумма: ${formatCurrency(currentReceiptSale.total)}\n` +
+                    `Товары:\n` + currentReceiptSale.items.map(i => `• ${i.name} x${i.qty}`).join('\n') +
+                    `\nСпасибо за покупку!`
+                );
+                window.open(`https://t.me/share/url?url=&text=${text}`, '_blank');
+            });
+        }
+        const waBtn = document.getElementById('shareWhatsAppBtn');
+        if (waBtn) {
+            waBtn.addEventListener('click', () => {
+                if (!currentReceiptSale) return;
+                const text = encodeURIComponent(
+                    `🧾 ЧЕК #${currentReceiptSale.id} — ${state.settings.shopName}\n` +
+                    `Сумма: ${formatCurrency(currentReceiptSale.total)}\n` +
+                    `Товары:\n` + currentReceiptSale.items.map(i => `• ${i.name} x${i.qty}`).join('\n') +
+                    `\nСпасибо за покупку!`
+                );
+                window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+            });
+        }
+
+        // Price Tag Modal Buttons
+        const closePriceBtn = document.getElementById('closePriceTagModalBtn');
+        const closePriceFoot = document.getElementById('closePriceTagFooterBtn');
+        if (closePriceBtn) closePriceBtn.addEventListener('click', () => document.getElementById('priceTagModal').classList.remove('active'));
+        if (closePriceFoot) closePriceFoot.addEventListener('click', () => document.getElementById('priceTagModal').classList.remove('active'));
+        const printPriceBtn = document.getElementById('printPriceTagBtn');
+        if (printPriceBtn) printPriceBtn.addEventListener('click', () => window.print());
+
+        // Product Modal Handlers
+        const quickAddBtn = document.getElementById('quickAddProductBtn');
+        if (quickAddBtn) quickAddBtn.addEventListener('click', () => openAddProductModalWithBarcode(''));
+        const mAddProd = document.getElementById('mobileAddProductBtn');
+        if (mAddProd) mAddProd.addEventListener('click', () => openAddProductModalWithBarcode(''));
+        const openAddModal = document.getElementById('openAddProductModalBtn');
+        if (openAddModal) openAddModal.addEventListener('click', () => openAddProductModalWithBarcode(''));
+
+        const closeProdBtn = document.getElementById('closeProductModalBtn');
+        const cancelProdBtn = document.getElementById('cancelProductBtn');
+        const hideProdModal = () => document.getElementById('productModal').classList.remove('active');
+        if (closeProdBtn) closeProdBtn.addEventListener('click', hideProdModal);
+        if (cancelProdBtn) cancelProdBtn.addEventListener('click', hideProdModal);
+
+        // Generate Barcode Button
+        const genBarcodeBtn = document.getElementById('genBarcodeBtn');
+        if (genBarcodeBtn) {
+            genBarcodeBtn.addEventListener('click', () => {
+                const randCode = '478' + Math.floor(100000000 + Math.random() * 900000000);
+                document.getElementById('prodBarcode').value = randCode;
+            });
+        }
+
+        // Product Save Form
+        const prodForm = document.getElementById('productForm');
+        if (prodForm) {
+            prodForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const idVal = document.getElementById('productId').value;
+                const name = document.getElementById('prodName').value.trim();
+                const category = document.getElementById('prodCategory').value.trim() || 'Общее';
+                const barcode = document.getElementById('prodBarcode').value.trim();
+                const cost = Number(document.getElementById('prodCost').value) || 0;
+                const price = Number(document.getElementById('prodPrice').value) || 0;
+                const stock = Number(document.getElementById('prodStock').value) || 0;
+                const unit = document.getElementById('prodUnit').value || 'шт';
+
+                if (idVal) {
+                    // Update
+                    const p = state.products.find(x => x.id === Number(idVal));
+                    if (p) {
+                        p.name = name; p.category = category; p.barcode = barcode;
+                        p.cost = cost; p.price = price; p.stock = stock; p.unit = unit;
+                    }
+                } else {
+                    // Add
+                    state.products.push({
+                        id: Date.now(),
+                        name, category, barcode, cost, price, stock, unit
+                    });
+                }
+
+                saveProducts();
+                renderAll();
+                hideProdModal();
+                playScannerBeep();
+            });
+        }
+
+        // Quick New Sale button in header
+        const quickSaleBtn = document.getElementById('quickNewSaleBtn');
+        if (quickSaleBtn) quickSaleBtn.addEventListener('click', () => switchTab('pos'));
+        const mNewSale = document.getElementById('mobileNewSaleBtn');
+        if (mNewSale) mNewSale.addEventListener('click', () => switchTab('pos'));
+
+        // Settings Form
+        const settingsForm = document.getElementById('settingsForm');
+        if (settingsForm) {
+            settingsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                state.settings.shopName = document.getElementById('settingShopName').value.trim() || "ShopMaster";
+                state.settings.currency = document.getElementById('settingCurrency').value.trim() || "so'm";
+                state.settings.lowStockThreshold = Number(document.getElementById('settingLowStockThreshold').value) || 5;
+                saveSettings();
+                renderAll();
+                alert('Настройки успешно сохранены!');
+            });
+        }
+
+        // Settings Sound & Confetti Toggles
+        const setSound = document.getElementById('settingSoundToggle');
+        if (setSound) {
+            setSound.addEventListener('change', (e) => {
+                state.settings.soundEnabled = e.target.checked;
+                saveSettings();
+                updateSoundIcons();
+            });
+        }
+        const setConf = document.getElementById('settingConfettiToggle');
+        if (setConf) {
+            setConf.addEventListener('change', (e) => {
+                state.settings.confettiEnabled = e.target.checked;
+                saveSettings();
+            });
+        }
+        const testSoundBtn = document.getElementById('testSoundBtn');
+        if (testSoundBtn) testSoundBtn.addEventListener('click', playCheckoutChime);
+
+        // Backup Actions
+        const expBackupBtn = document.getElementById('exportBackupBtn');
+        if (expBackupBtn) expBackupBtn.addEventListener('click', exportBackupJSON);
+        const impBackupInput = document.getElementById('importBackupInput');
+        if (impBackupInput) impBackupInput.addEventListener('change', importBackupJSON);
+        const demoDataBtn = document.getElementById('loadDemoDataBtn');
+        if (demoDataBtn) {
+            demoDataBtn.addEventListener('click', () => {
+                if (confirm('Загрузить набор готовых демо-товаров?')) {
+                    state.products = [...DEMO_PRODUCTS];
+                    saveProducts();
+                    renderAll();
+                    alert('Демо-товары загружены!');
+                }
+            });
+        }
+        const resetAllBtn = document.getElementById('resetAllDataBtn');
+        if (resetAllBtn) {
+            resetAllBtn.addEventListener('click', () => {
+                if (confirm(i18n[state.currentLang].confirmReset)) {
+                    state.products = [];
+                    state.sales = [];
+                    state.debts = [];
+                    state.cart = [];
+                    saveProducts();
+                    saveSales();
+                    saveDebts();
+                    renderAll();
+                    alert(i18n[state.currentLang].resetDone);
+                }
+            });
+        }
     }
 
+    // JSON BACKUP & RESTORE
     function exportBackupJSON() {
-        try {
-            // Exclude chartInstance — it's a Chart.js object that can't be serialized
-            const exportData = {
-                products: state.products,
-                sales: state.sales,
-                settings: state.settings,
-                currentLang: state.currentLang
-            };
-            const jsonStr = JSON.stringify(exportData, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const dlAnchor = document.createElement('a');
-            dlAnchor.href = url;
-            dlAnchor.download = 'ShopMaster_Backup_' + new Date().toISOString().slice(0, 10) + '.json';
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            document.body.removeChild(dlAnchor);
-            URL.revokeObjectURL(url);
-            alert(state.currentLang === 'uz' ? 'Zaxira fayli yuklandi!' : 'Файл бэкапа скачан!');
-        } catch (err) {
-            alert('Ошибка экспорта: ' + err.message);
-        }
+        const backupData = {
+            version: '4.0',
+            exportedAt: new Date().toISOString(),
+            products: state.products,
+            sales: state.sales,
+            debts: state.debts,
+            settings: state.settings
+        };
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ShopMaster_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
     function importBackupJSON(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.onload = function (event) {
+        reader.onload = function (evt) {
             try {
-                const imported = JSON.parse(event.target.result);
-                if (imported.products && imported.sales) {
-                    state.products = imported.products;
-                    state.sales = imported.sales;
-                    if (imported.settings) state.settings = { ...state.settings, ...imported.settings };
-
+                const data = JSON.parse(evt.target.result);
+                if (data.products && Array.isArray(data.products)) {
+                    state.products = data.products;
+                    state.sales = data.sales || [];
+                    state.debts = data.debts || [];
+                    if (data.settings) state.settings = { ...state.settings, ...data.settings };
                     saveProducts();
                     saveSales();
+                    saveDebts();
                     saveSettings();
                     renderAll();
-                    alert(state.currentLang === 'uz' ? 'Zaxira fayli tiklandi!' : 'Бэкап успешно восстановлен!');
+                    alert('База данных успешно восстановлена!');
                 } else {
-                    alert('Format error');
+                    alert('Неверный формат файла резервной копии.');
                 }
             } catch (err) {
-                alert('JSON error');
+                alert('Ошибка чтения JSON файла: ' + err.message);
             }
         };
         reader.readAsText(file);
     }
 
+    // Launch application when DOM is ready
     document.addEventListener('DOMContentLoaded', initApp);
-
 })();
